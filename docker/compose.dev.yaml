@@ -9,25 +9,41 @@ services:
       - minio_data:/data
 
   keycloak_web:
-    image: quay.io/keycloak/keycloak:latest
+    image: bitnami/keycloak
     container_name: keycloak_web
     environment:
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://keycloakdb:5432/keycloak
-      KC_DB_USERNAME: keycloak
-      KC_DB_PASSWORD: password
+      - KEYCLOAK_DATABASE_HOST=keycloakdb
+      - KEYCLOAK_DATABASE_PORT=5432
+      - KEYCLOAK_DATABASE_USER=keycloak
+      - KEYCLOAK_DATABASE_PASSWORD=password
+      - KEYCLOAK_DATABASE_NAME=keycloak
+      
+      - KEYCLOAK_CREATE_ADMIN_USER=true
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    volumes:
+      - './keycloak-config/config.json:/opt/keycloak/data/import/odin-realm.json'
+      - 'keycloak_data:/bitnami/keycloak'
+    command:
+      - /bin/bash
+      - -c
+      - |
+        /opt/bitnami/scripts/keycloak/entrypoint.sh /opt/bitnami/scripts/keycloak/run.sh &
+        KEYCLOAK_PID=$$!
+        echo "Waiting for Keycloak to start..."
+        while ! curl --output /dev/null --silent --head --fail http://localhost:8080/; do
+          echo "Waiting for Keycloak..."
+          sleep 5
+        done
+        echo "Keycloak is up, starting import..."
+        /opt/bitnami/keycloak/bin/kc.sh import --file /opt/keycloak/data/import/odin-realm.json
+        
+        /opt/bitnami/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin --config /opt/bitnami/keycloak/keycloakConfig.json
+        /opt/bitnami/keycloak/bin/kcadm.sh create roles -r "TDW" -s name="file:read" --config /opt/bitnami/keycloak/keycloakConfig.json
+        /opt/bitnami/keycloak/bin/kcadm.sh create roles -r "TDW" -s name="file:write" --config /opt/bitnami/keycloak/keycloakConfig.json
 
-      KC_HOSTNAME: localhost
-      KC_HOSTNAME_PORT: 8080
-      KC_HOSTNAME_STRICT: false
-      KC_HOSTNAME_STRICT_HTTPS: false
-
-      KC_LOG_LEVEL: info
-      KC_METRICS_ENABLED: true
-      KC_HEALTH_ENABLED: true
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-    command: start-dev
+        
+        wait $$KEYCLOAK_PID
     depends_on:
       - keycloakdb
     ports:
@@ -43,5 +59,6 @@ services:
       POSTGRES_PASSWORD: password
 
 volumes:
+  keycloak_data:
   postgres_data:
   minio_data:
