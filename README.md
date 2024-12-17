@@ -67,3 +67,7 @@ Odin addresses this challenge by providing an innovative file repository platfor
 3. The student searches for exam topics like "quantum physics concepts."
 4. Odin highlights key sections related to the topic in the uploaded files.
 5. The student interacts with the AI chat to ask questions like, "Explain quantum entanglement," and receives concise answers.
+
+## Technologies Used
+
+![Architecture Diagram](./docs/images/architecture.png)
