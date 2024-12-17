@@ -1,5 +1,5 @@
 # Project Odin
-
+![Odin Logo](./docs/images/logo_background.png)
 In the digital age, individuals and organizations are often overwhelmed by vast amounts of information stored across numerous documents and files. While search engines and research platforms like Scopus offer keyword-based search and document organization, there is still a need for a personal, intuitive, and intelligent system that can analyze, organize, and make sense of user-uploaded documents.
 
 Odin addresses this challenge by providing an innovative file repository platform that extracts, analyses, and indexes text and metadata from uploaded documents. The system enables keyword-based searches, highlights relevant document sections, and offers AI-powered insights into single or multiple documents through an interactive chat interface. By streamlining document management and analysis, Odin acts as a personal knowledge hub, empowering users to extract actionable insights from their own data.
