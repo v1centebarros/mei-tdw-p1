@@ -50,13 +50,27 @@ services:
       - 8080:8080
 
   keycloakdb:
-    image: postgres:15
+    image: postgres:alpine
+    ports:
+      - 5432:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - './postgresql-init:/docker-entrypoint-initdb.d'
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: password
+      
+      API_DB_NAME: api
+      API_DB_USER: api
+      API_DB_PASSWORD: password
+      
+      
+      
+  tika:
+    image: apache/tika
+    ports:
+      - "9998:9998"
 
 volumes:
   keycloak_data:
