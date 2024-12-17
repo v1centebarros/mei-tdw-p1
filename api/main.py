@@ -1,6 +1,13 @@
+import io
 import uuid
 from typing import List, Optional
 from datetime import timedelta
+import requests
+import json
+from sqlalchemy import create_engine, Column, String, Integer, JSON, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
+from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Security
 from fastapi.security import OAuth2AuthorizationCodeBearer, OAuth2PasswordBearer, HTTPBearer, \
@@ -56,6 +63,43 @@ minio_client = Minio(
 
 # Default bucket name
 BUCKET_NAME = "fastapi-bucket"
+
+# TIKA server URL
+TIKA_URL = "http://localhost:9998"
+
+# PostgreSQL configuration
+DATABASE_URL = "postgresql://api:password@localhost:5432/api"
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# SQLAlchemy Base
+Base = declarative_base()
+
+
+class FileMetadata(Base):
+    __tablename__ = "file_metadata"
+
+    id = Column(String, primary_key=True)
+    filename = Column(String)
+    content_type = Column(String)
+    tika_metadata = Column(JSON)  # renamed from metadata to avoid SQLAlchemy conflict
+    content = Column(String)
+    user_id = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# Create tables
+Base.metadata.create_all(bind=engine)
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 # Ensure bucket exists
 try:
@@ -162,6 +206,7 @@ async def register_user(user_data: UserRegistration):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/auth/login", response_model=TokenResponse)
 async def login_user(user_credentials: UserLogin):
     """
@@ -264,20 +309,22 @@ def require_roles(required_roles: List[str]):
 @app.post("/upload/", status_code=201)
 async def upload_file(
         file: UploadFile = File(...),
-        user: User = Security(get_current_user, scopes=["file:write"])
+        user: User = Security(get_current_user, scopes=["file:write"]),
+        db: Session = Depends(get_db)
 ):
     """
-    Upload a file to MinIO storage
+    Upload a file to MinIO storage and process with TIKA
     """
     try:
         file_id = uuid.uuid4().hex
+        file_content = await file.read()  # Read file content
 
         # Upload to MinIO with user metadata
         minio_client.put_object(
             BUCKET_NAME,
             file_id,
-            length=file.size,
-            data=file.file,
+            length=len(file_content),
+            data=io.BytesIO(file_content),
             metadata={
                 "filename": file.filename,
                 "user_id": user.sub,
@@ -286,11 +333,82 @@ async def upload_file(
             part_size=10 * 1024 * 1024  # 10MB parts
         )
 
-        return {"message": f"Successfully uploaded {file.filename}", "file_id": file_id}
+        # Send to TIKA for content extraction
+        try:
+            # Extract content
+            tika_content_response = requests.put(
+                f"{TIKA_URL}/tika",
+                data=file_content,
+                headers={'Accept': 'text/plain'}
+            )
+            tika_content = tika_content_response.text
+
+            # Extract metadata
+            tika_metadata_response = requests.put(
+                f"{TIKA_URL}/meta",
+                data=file_content,
+                headers={'Accept': 'application/json'}
+            )
+            tika_metadata = tika_metadata_response.json()
+
+            # Store in PostgreSQL
+            file_metadata = FileMetadata(
+                id=file_id,
+                filename=file.filename,
+                content_type=file.content_type,
+                tika_metadata=tika_metadata,
+                content=tika_content,
+                user_id=user.sub
+            )
+            db.add(file_metadata)
+            db.commit()
+
+        except requests.RequestException as e:
+            print(f"TIKA processing error: {e}")
+            # Continue even if TIKA fails
+            pass
+
+        return {
+            "message": f"Successfully uploaded {file.filename}",
+            "file_id": file_id,
+            "tika_processed": True
+        }
+
     except S3Error as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         file.file.close()
+
+
+# Add new endpoint to get file metadata
+@app.get("/files/{file_id}/metadata")
+async def get_file_metadata(
+        file_id: str,
+        user: User = Security(get_current_user, scopes=["file:read"]),
+        db: Session = Depends(get_db)
+):
+    """
+    Get file metadata including TIKA extraction results
+    """
+    # Query the database for file metadata
+    file_metadata = db.query(FileMetadata).filter(FileMetadata.id == file_id).first()
+
+    if not file_metadata:
+        raise HTTPException(status_code=404, detail="File metadata not found")
+
+    # Check if user has access to the file
+    if file_metadata.user_id != user.sub and "admin" not in user.roles:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    return {
+        "file_id": file_metadata.id,
+        "filename": file_metadata.filename,
+        "content_type": file_metadata.content_type,
+        "metadata": file_metadata.tika_metadata,
+        "content": file_metadata.content,
+        "created_at": file_metadata.created_at,
+        "updated_at": file_metadata.updated_at
+    }
 
 
 @app.get("/files/", response_model=List[FileInfo])
