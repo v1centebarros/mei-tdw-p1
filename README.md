@@ -1,8 +1,8 @@
-# Project Laozi
+# Project Odin
 
 In the digital age, individuals and organizations are often overwhelmed by vast amounts of information stored across numerous documents and files. While search engines and research platforms like Scopus offer keyword-based search and document organization, there is still a need for a personal, intuitive, and intelligent system that can analyze, organize, and make sense of user-uploaded documents.
 
-Laozi addresses this challenge by providing an innovative file repository platform that extracts, analyses, and indexes text and metadata from uploaded documents. The system enables keyword-based searches, highlights relevant document sections, and offers AI-powered insights into single or multiple documents through an interactive chat interface. By streamlining document management and analysis, Laozi acts as a personal knowledge hub, empowering users to extract actionable insights from their own data.
+Odin addresses this challenge by providing an innovative file repository platform that extracts, analyses, and indexes text and metadata from uploaded documents. The system enables keyword-based searches, highlights relevant document sections, and offers AI-powered insights into single or multiple documents through an interactive chat interface. By streamlining document management and analysis, Odin acts as a personal knowledge hub, empowering users to extract actionable insights from their own data.
 
 ---
 
@@ -53,17 +53,17 @@ Laozi addresses this challenge by providing an innovative file repository platfo
 ### Use Case 1: Researcher Uploads and Searches Documents
 
 **Workflow:**
-1. The researcher uploads a collection of scientific papers (PDF format) into Laozi.
-2. Laozi extracts text, keywords, and metadata from the uploaded documents.
+1. The researcher uploads a collection of scientific papers (PDF format) into Odin.
+2. Odin extracts text, keywords, and metadata from the uploaded documents.
 3. The researcher searches for a specific keyword, e.g., "machine learning models."
-4. Laozi displays a list of related papers, highlighting sections where the keyword appears.
+4. Odin displays a list of related papers, highlighting sections where the keyword appears.
 5. The researcher uses the chat feature to ask for a summary of a particular paper or compare insights across multiple papers.
 
 ### Use Case 2: Student Preparing for Exams
 
 **Workflow:**
-1. The student uploads class notes and e-books into Laozi.
-2. Laozi indexes and organizes the uploaded files based on metadata and keywords.
+1. The student uploads class notes and e-books into Odin.
+2. Odin indexes and organizes the uploaded files based on metadata and keywords.
 3. The student searches for exam topics like "quantum physics concepts."
-4. Laozi highlights key sections related to the topic in the uploaded files.
+4. Odin highlights key sections related to the topic in the uploaded files.
 5. The student interacts with the AI chat to ask questions like, "Explain quantum entanglement," and receives concise answers.
