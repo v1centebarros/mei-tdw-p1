@@ -283,11 +283,15 @@ async def upload_file(
 
         # Send to TIKA for content extraction
         try:
+            print(file.content_type)
             # Extract content
             tika_content_response = requests.put(
                 f"{TIKA_URL}/tika",
                 data=file_content,
-                headers={'Accept': 'text/plain'}
+                headers={
+                    'Accept': 'text/plain; charset=UTF-8',
+                    'Content-Type': f'{file.content_type}'
+                }
             )
             tika_content = tika_content_response.text
 
@@ -344,7 +348,7 @@ async def get_file_metadata(
         raise HTTPException(status_code=404, detail="File metadata not found")
 
     # Check if user has access to the file
-    if file_crud.user_owns_file(db, file_id, user.sub) and "admin" not in user.roles:
+    if not file_crud.user_owns_file(db, file_id, user.sub) and "admin" not in user.roles:
         raise HTTPException(status_code=403, detail="Access denied")
 
     return {
