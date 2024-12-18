@@ -1,4 +1,3 @@
-import io
 import uuid
 from typing import List, Optional
 from datetime import timedelta
@@ -482,20 +481,29 @@ async def download_file(
 @app.delete("/files/{file_id}")
 async def delete_file(
         file_id: str,
-        user: User = Security(get_current_user, scopes=["file:write"])
+        user: User = Security(get_current_user, scopes=["file:write"]),
+        db: Session = Depends(get_db)
 ):
     """
-    Delete a file from storage
+    Delete a file from storage and its associated metadata
     """
     try:
-        # Get object metadata
+        # Get object metadata from MinIO
         stat = minio_client.stat_object(BUCKET_NAME, file_id)
 
         # Check if user has access to the file
         if user.sub != stat.metadata.get("x-amz-meta-user_id") and "admin" not in user.roles:
             raise HTTPException(status_code=403, detail="Access denied")
 
+        # Delete from MinIO
         minio_client.remove_object(BUCKET_NAME, file_id)
-        return {"message": f"Successfully deleted {stat.metadata.get('x-amz-meta-filename', file_id)}"}
+
+        # Delete metadata from PostgreSQL
+        file_metadata = db.query(FileMetadata).filter(FileMetadata.id == file_id).first()
+        if file_metadata:
+            db.delete(file_metadata)
+            db.commit()
+
+        return {"message": f"Successfully deleted {stat.metadata.get('x-amz-meta-filename', file_id)} and its metadata"}
     except S3Error as e:
         raise HTTPException(status_code=404, detail="File not found")
