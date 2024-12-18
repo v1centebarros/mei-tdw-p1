@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import List
 
 import requests
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -18,6 +19,11 @@ from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, String, JSON, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+
+from db.database import engine, SessionLocal
+from models.file import Base, FileMetadata
+from schemas.auth import UserRegistration, TokenResponse, UserLogin, User
+from schemas.file import FileInfo
 
 # Load environment variables
 load_dotenv()
@@ -67,26 +73,6 @@ BUCKET_NAME = os.getenv('MINIO_BUCKET_NAME')
 # TIKA server URL from environment
 TIKA_URL = os.getenv('TIKA_URL')
 
-DATABASE_URL = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# SQLAlchemy Base
-Base = declarative_base()
-
-
-class FileMetadata(Base):
-    __tablename__ = "file_metadata"
-
-    id = Column(String, primary_key=True)
-    filename = Column(String)
-    content_type = Column(String)
-    tika_metadata = Column(JSON)  # renamed from metadata to avoid SQLAlchemy conflict
-    content = Column(String)
-    user_id = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -106,40 +92,6 @@ try:
         minio_client.make_bucket(BUCKET_NAME)
 except S3Error as e:
     print(f"Error creating bucket: {e}")
-
-
-class FileInfo(BaseModel):
-    fileId: str
-    filename: str
-    size: int
-    last_modified: str
-
-
-class User(BaseModel):
-    username: str
-    roles: List[str]
-    sub: str
-
-
-class UserRegistration(BaseModel):
-    username: str
-    email: str
-    password: str
-    firstName: str
-    lastName: str
-
-
-class UserLogin(BaseModel):
-    username: str
-    password: str
-
-
-class TokenResponse(BaseModel):
-    access_token: str
-    refresh_token: str
-    expires_in: int
-    refresh_expires_in: int
-    token_type: str
 
 
 # Initialize Keycloak admin client
