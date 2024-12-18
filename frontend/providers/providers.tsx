@@ -13,12 +13,7 @@ export function Providers(
 
     const queryClient = getQueryClient();
     return (
-        <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-        >
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <NuqsAdapter>
                 <QueryClientProvider client={queryClient}>
                     <SessionProvider>
