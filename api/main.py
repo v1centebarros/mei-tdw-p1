@@ -8,41 +8,32 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from keycloak import KeycloakOpenID, KeycloakAdmin
+from fastapi.security import HTTPAuthorizationCredentials
+from keycloak import KeycloakAdmin
 from keycloak.exceptions import KeycloakError
 from keycloak.exceptions import KeycloakGetError
-from minio import Minio
 from minio.error import S3Error
 from sqlalchemy.orm import Session
 
-from db.database import engine, SessionLocal
-from models.file import Base, FileMetadata
+from core.config import get_settings
+from core.minio import init_minio, minio_client
+from core.security import oauth2_scheme, keycloak_openid
 from crud import file as file_crud
+from db.database import engine, SessionLocal
+from models.file import Base
 from schemas.auth import UserRegistration, TokenResponse, UserLogin, User
 from schemas.file import FileInfo
 
 # Load environment variables
 load_dotenv()
 
-# Keycloak settings from environment variables
-KEYCLOAK_URL = os.getenv('KEYCLOAK_URL')
-KEYCLOAK_REALM = os.getenv('KEYCLOAK_REALM')
-KEYCLOAK_CLIENT_ID = os.getenv('KEYCLOAK_CLIENT_ID')
-KEYCLOAK_CLIENT_SECRET = os.getenv('KEYCLOAK_CLIENT_SECRET')
-KEYCLOAK_ALGORITHM = os.getenv('KEYCLOAK_ALGORITHM')
+settings = get_settings()
 
-
-# Initialize Keycloak clients
-# OAuth client for token validation and user authentication
-keycloak_openid = KeycloakOpenID(
-    server_url=KEYCLOAK_URL,
-    client_id=KEYCLOAK_CLIENT_ID,
-    realm_name=KEYCLOAK_REALM,
-    client_secret_key=KEYCLOAK_CLIENT_SECRET
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.VERSION
 )
 
-app = FastAPI(title="FastAPI MinIO CRUD")
 
 # Add CORS middleware
 app.add_middleware(
@@ -52,20 +43,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# OAuth2 scheme for Swagger UI
-oauth2_scheme = HTTPBearer()
-
-# Initialize MinIO client from environment variables
-minio_client = Minio(
-    os.getenv('MINIO_HOST'),
-    access_key=os.getenv('MINIO_ACCESS_KEY'),
-    secret_key=os.getenv('MINIO_SECRET_KEY'),
-    secure=os.getenv('MINIO_SECURE', 'false').lower() == 'true'
-)
-
-# Default bucket name from environment
-BUCKET_NAME = os.getenv('MINIO_BUCKET_NAME')
 
 # TIKA server URL from environment
 TIKA_URL = os.getenv('TIKA_URL')
@@ -83,20 +60,14 @@ def get_db():
         db.close()
 
 
-# Ensure bucket exists
-try:
-    if not minio_client.bucket_exists(BUCKET_NAME):
-        minio_client.make_bucket(BUCKET_NAME)
-except S3Error as e:
-    print(f"Error creating bucket: {e}")
-
+init_minio()
 
 # Initialize Keycloak admin client
 keycloak_admin = KeycloakAdmin(
-    server_url=KEYCLOAK_URL,
-    realm_name=KEYCLOAK_REALM,
-    client_id=KEYCLOAK_CLIENT_ID,
-    client_secret_key=KEYCLOAK_CLIENT_SECRET,
+    server_url=settings.KEYCLOAK_URL,
+    realm_name=settings.KEYCLOAK_REALM,
+    client_id=settings.KEYCLOAK_CLIENT_ID,
+    client_secret_key=settings.KEYCLOAK_CLIENT_SECRET,
     verify=True
 )
 
@@ -269,7 +240,7 @@ async def upload_file(
 
         # Upload to MinIO with user metadata
         minio_client.put_object(
-            BUCKET_NAME,
+            settings.MINIO_BUCKET_NAME,
             file_id,
             length=len(file_content),
             data=io.BytesIO(file_content),
@@ -370,11 +341,11 @@ async def list_files(
     List all files in the storage
     """
     try:
-        objects = minio_client.list_objects(BUCKET_NAME)
+        objects = minio_client.list_objects(settings.MINIO_BUCKET_NAME)
         files = []
         for obj in objects:
             # Get object metadata
-            stat = minio_client.stat_object(BUCKET_NAME, obj.object_name)
+            stat = minio_client.stat_object(settings.MINIO_BUCKET_NAME, obj.object_name)
             # Check if user has access to the file
             if user.sub == stat.metadata.get("x-amz-meta-user_id") or "admin" in user.roles:
                 files.append(
@@ -400,14 +371,14 @@ async def download_file(
     """
     try:
         # Get object metadata
-        stat = minio_client.stat_object(BUCKET_NAME, file_id)
+        stat = minio_client.stat_object(settings.MINIO_BUCKET_NAME, file_id)
 
         # Check if user has access to the file
         if user.sub != stat.metadata.get("x-amz-meta-user_id") and "admin" not in user.roles:
             raise HTTPException(status_code=403, detail="Access denied")
 
         # Get object data
-        data = minio_client.get_object(BUCKET_NAME, file_id)
+        data = minio_client.get_object(settings.MINIO_BUCKET_NAME, file_id)
         filename = stat.metadata.get("x-amz-meta-filename", file_id)
 
         # Create generator for streaming response
@@ -441,14 +412,14 @@ async def delete_file(
     """
     try:
         # Get object metadata from MinIO
-        stat = minio_client.stat_object(BUCKET_NAME, file_id)
+        stat = minio_client.stat_object(settings.MINIO_BUCKET_NAME, file_id)
 
         # Check if user has access to the file
         if not file_crud.user_owns_file(db, file_id, user.sub)  and "admin" not in user.roles:
             raise HTTPException(status_code=403, detail="Access denied")
 
         # Delete from MinIO
-        minio_client.remove_object(BUCKET_NAME, file_id)
+        minio_client.remove_object(settings.MINIO_BUCKET_NAME, file_id)
 
         # Delete metadata from PostgreSQL
         if file_crud.delete_file_metadata(db, file_id):
