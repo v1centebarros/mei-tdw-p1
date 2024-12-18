@@ -1,33 +1,34 @@
+import io
+import os
 import uuid
-from typing import List, Optional
-from datetime import timedelta
-import requests
-import json
-from sqlalchemy import create_engine, Column, String, Integer, JSON, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
 from datetime import datetime
+from typing import List
 
+import requests
 from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Security
-from fastapi.security import OAuth2AuthorizationCodeBearer, OAuth2PasswordBearer, HTTPBearer, \
-    HTTPAuthorizationCredentials
-from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-
+from fastapi.responses import StreamingResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from keycloak import KeycloakOpenID, KeycloakAdmin
+from keycloak.exceptions import KeycloakError
+from keycloak.exceptions import KeycloakGetError
 from minio import Minio
 from minio.error import S3Error
+from pydantic import BaseModel
+from sqlalchemy import create_engine, Column, String, JSON, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
 
-from keycloak import KeycloakOpenID, KeycloakAdmin
-from keycloak.exceptions import KeycloakGetError
-from keycloak.exceptions import KeycloakError
+# Load environment variables
+load_dotenv()
 
-# Keycloak settings
-KEYCLOAK_URL = "http://localhost:8080"
-KEYCLOAK_REALM = "TDW"
-KEYCLOAK_CLIENT_ID = "tdw-client"
-KEYCLOAK_CLIENT_SECRET = "WnM69tiQwcscM9Ix0f5TXppHOuS917lm"
-KEYCLOAK_ALGORITHM = "RS256"
+# Keycloak settings from environment variables
+KEYCLOAK_URL = os.getenv('KEYCLOAK_URL')
+KEYCLOAK_REALM = os.getenv('KEYCLOAK_REALM')
+KEYCLOAK_CLIENT_ID = os.getenv('KEYCLOAK_CLIENT_ID')
+KEYCLOAK_CLIENT_SECRET = os.getenv('KEYCLOAK_CLIENT_SECRET')
+KEYCLOAK_ALGORITHM = os.getenv('KEYCLOAK_ALGORITHM')
+
 
 # Initialize Keycloak clients
 # OAuth client for token validation and user authentication
@@ -52,22 +53,21 @@ app.add_middleware(
 # OAuth2 scheme for Swagger UI
 oauth2_scheme = HTTPBearer()
 
-# Initialize MinIO client
+# Initialize MinIO client from environment variables
 minio_client = Minio(
-    "localhost:9000",
-    access_key="minioadmin",
-    secret_key="minioadmin",
-    secure=False
+    os.getenv('MINIO_HOST'),
+    access_key=os.getenv('MINIO_ACCESS_KEY'),
+    secret_key=os.getenv('MINIO_SECRET_KEY'),
+    secure=os.getenv('MINIO_SECURE', 'false').lower() == 'true'
 )
 
-# Default bucket name
-BUCKET_NAME = "fastapi-bucket"
+# Default bucket name from environment
+BUCKET_NAME = os.getenv('MINIO_BUCKET_NAME')
 
-# TIKA server URL
-TIKA_URL = "http://localhost:9998"
+# TIKA server URL from environment
+TIKA_URL = os.getenv('TIKA_URL')
 
-# PostgreSQL configuration
-DATABASE_URL = "postgresql://api:password@localhost:5432/api"
+DATABASE_URL = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
