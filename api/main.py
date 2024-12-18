@@ -23,11 +23,17 @@ from db.database import engine, SessionLocal
 from models.file import Base
 from schemas.auth import UserRegistration, TokenResponse, UserLogin, User
 from schemas.file import FileInfo
+from services.keycloak import KeycloakService
+from services.minio import MinioService
+from services.tika import TikaService
 
 # Load environment variables
 load_dotenv()
 
 settings = get_settings()
+minio_service = MinioService()
+keycloak_service = KeycloakService()
+tika_service = TikaService()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -43,10 +49,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# TIKA server URL from environment
-TIKA_URL = os.getenv('TIKA_URL')
-
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -78,50 +80,13 @@ async def register_user(user_data: UserRegistration):
     Register a new user in Keycloak
     """
     try:
-        # Create user in Keycloak
-        new_user = keycloak_admin.create_user({
-            "username": user_data.username,
-            "email": user_data.email,
-            "enabled": True,
-            "firstName": user_data.firstName,
-            "lastName": user_data.lastName,
-            "credentials": [{
-                "type": "password",
-                "value": user_data.password,
-                "temporary": False
-            }]
-        })
-
-        # Get the user id
-        user_id = keycloak_admin.get_user_id(user_data.username)
-
-        # Get role representations
-        roles = keycloak_admin.get_realm_roles()
-        file_read_role = next((role for role in roles if role['name'] == 'file:read'), None)
-        file_write_role = next((role for role in roles if role['name'] == 'file:write'), None)
-
-        # Format roles for assignment
-        roles_to_assign = []
-        if file_read_role:
-            roles_to_assign.append(file_read_role)
-        if file_write_role:
-            roles_to_assign.append(file_write_role)
-
-        # Assign roles if they exist
-        if roles_to_assign:
-            keycloak_admin.assign_realm_roles(
-                user_id=user_id,
-                roles=roles_to_assign
-            )
-
-        return {"message": "User registered successfully"}
-    except KeycloakGetError as e:
-        if "username already exists" in str(e):
-            raise HTTPException(
-                status_code=400,
-                detail="Username already exists"
-            )
-        raise HTTPException(status_code=500, detail=str(e))
+        user_id = keycloak_service.create_user(user_data)
+        return {
+            "message": "User registered successfully",
+            "user_id": user_id
+        }
+    except HTTPException as e:
+        raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -186,6 +151,11 @@ async def logout(refresh_token: str):
     try:
         keycloak_openid.logout(refresh_token)
         return {"message": "Successfully logged out"}
+    except KeycloakError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid refresh token"
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -239,55 +209,38 @@ async def upload_file(
         file_content = await file.read()  # Read file content
 
         # Upload to MinIO with user metadata
-        minio_client.put_object(
-            settings.MINIO_BUCKET_NAME,
-            file_id,
-            length=len(file_content),
-            data=io.BytesIO(file_content),
-            metadata={
-                "filename": file.filename,
-                "user_id": user.sub,
-                "username": user.username
-            },
-            part_size=10 * 1024 * 1024  # 10MB parts
+        metadata = {
+            "filename": file.filename,
+            "user_id": user.sub,
+            "username": user.username
+        }
+        await minio_service.upload_file(
+            file_id=file_id,
+            file_data=io.BytesIO(file_content),
+            file_size=len(file_content),
+            metadata=metadata
         )
 
         # Send to TIKA for content extraction
         try:
-            print(file.content_type)
-            # Extract content
-            tika_content_response = requests.put(
-                f"{TIKA_URL}/tika",
-                data=file_content,
-                headers={
-                    'Accept': 'text/plain; charset=UTF-8',
-                    'Content-Type': f'{file.content_type}'
-                }
+            content, tika_metadata = await tika_service.process_file(
+                file_content=file_content,
+                content_type=file.content_type
             )
-            tika_content = tika_content_response.text
 
-            # Extract metadata
-            tika_metadata_response = requests.put(
-                f"{TIKA_URL}/meta",
-                data=file_content,
-                headers={'Accept': 'application/json'}
-            )
-            tika_metadata = tika_metadata_response.json()
-
-            # Store in PostgreSQL
+            # Store metadata in database
             file_crud.create_file_metadata(
                 db=db,
                 file_id=file_id,
                 filename=file.filename,
                 content_type=file.content_type,
                 tika_metadata=tika_metadata,
-                content=tika_content,
+                content=content,
                 user_id=user.sub
             )
 
         except requests.RequestException as e:
             print(f"TIKA processing error: {e}")
-            # Continue even if TIKA fails
             pass
 
         return {
@@ -322,15 +275,7 @@ async def get_file_metadata(
     if not file_crud.user_owns_file(db, file_id, user.sub) and "admin" not in user.roles:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    return {
-        "file_id": file_metadata.id,
-        "filename": file_metadata.filename,
-        "content_type": file_metadata.content_type,
-        "metadata": file_metadata.tika_metadata,
-        "content": file_metadata.content,
-        "created_at": file_metadata.created_at,
-        "updated_at": file_metadata.updated_at
-    }
+    return file_metadata
 
 
 @app.get("/files/", response_model=List[FileInfo])
@@ -341,17 +286,17 @@ async def list_files(
     List all files in the storage
     """
     try:
-        objects = minio_client.list_objects(settings.MINIO_BUCKET_NAME)
+        objects = minio_service.list_files()
         files = []
         for obj in objects:
             # Get object metadata
-            stat = minio_client.stat_object(settings.MINIO_BUCKET_NAME, obj.object_name)
+            metadata = minio_service.get_file_metadata(obj.object_name)
             # Check if user has access to the file
-            if user.sub == stat.metadata.get("x-amz-meta-user_id") or "admin" in user.roles:
+            if user.sub == metadata.get("x-amz-meta-user_id") or "admin" in user.roles:
                 files.append(
                     FileInfo(
                         fileId=obj.object_name,
-                        filename=stat.metadata.get("x-amz-meta-filename", obj.object_name),
+                        filename=metadata.get("x-amz-meta-filename", obj.object_name),
                         size=obj.size,
                         last_modified=obj.last_modified.strftime("%Y-%m-%d %H:%M:%S")
                     )
@@ -369,36 +314,22 @@ async def download_file(
     """
     Download a file from storage
     """
-    try:
-        # Get object metadata
-        stat = minio_client.stat_object(settings.MINIO_BUCKET_NAME, file_id)
+    # Get object metadata
+    metadata = minio_service.get_file_metadata(file_id)
 
-        # Check if user has access to the file
-        if user.sub != stat.metadata.get("x-amz-meta-user_id") and "admin" not in user.roles:
-            raise HTTPException(status_code=403, detail="Access denied")
+    # Check if user has access to the file
+    if user.sub != metadata.get("x-amz-meta-user_id") and "admin" not in user.roles:
+        raise HTTPException(status_code=403, detail="Access denied")
 
-        # Get object data
-        data = minio_client.get_object(settings.MINIO_BUCKET_NAME, file_id)
-        filename = stat.metadata.get("x-amz-meta-filename", file_id)
+    data, metadata = minio_service.download_file(file_id)
+    filename = metadata.get("x-amz-meta-filename", file_id)
 
-        # Create generator for streaming response
-        def iterfile():
-            try:
-                yield from data
-            finally:
-                data.close()
-                data.release_conn()
+    return StreamingResponse(
+        data,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
-        # Return streaming response
-        return StreamingResponse(
-            iterfile(),
-            media_type="application/octet-stream",
-            headers={
-                "Content-Disposition": f"attachment; filename={filename}"
-            }
-        )
-    except S3Error as e:
-        raise HTTPException(status_code=404, detail="File not found")
 
 
 @app.delete("/files/{file_id}")
@@ -410,23 +341,20 @@ async def delete_file(
     """
     Delete a file from storage and its associated metadata
     """
-    try:
-        # Get object metadata from MinIO
-        stat = minio_client.stat_object(settings.MINIO_BUCKET_NAME, file_id)
+    metadata = minio_service.get_file_metadata(file_id)
 
-        # Check if user has access to the file
-        if not file_crud.user_owns_file(db, file_id, user.sub)  and "admin" not in user.roles:
-            raise HTTPException(status_code=403, detail="Access denied")
+    # Check if user has access to the file
+    if not file_crud.user_owns_file(db, file_id, user.sub) and "admin" not in user.roles:
+        raise HTTPException(status_code=403, detail="Access denied")
 
-        # Delete from MinIO
-        minio_client.remove_object(settings.MINIO_BUCKET_NAME, file_id)
+    # Delete from MinIO
+    minio_service.delete_file(file_id)
 
-        # Delete metadata from PostgreSQL
-        if file_crud.delete_file_metadata(db, file_id):
-            return {
-                "message": f"Successfully deleted {stat.metadata.get('x-amz-meta-filename', file_id)} and its metadata"
-            }
-        else:
-            raise HTTPException(status_code=404, detail="File metadata not found")
-    except S3Error as e:
-        raise HTTPException(status_code=404, detail="File not found")
+    # Delete metadata from PostgreSQL
+    if file_crud.delete_file_metadata(db, file_id):
+        return {
+            "message": f"Successfully deleted {metadata.get('x-amz-meta-filename', file_id)} and its metadata"
+        }
+    else:
+        raise HTTPException(status_code=404, detail="File metadata not found")
+
