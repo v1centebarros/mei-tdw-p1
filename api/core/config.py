@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "OPIN API"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
+    DESCRIPTION: str = "OPIN API"
 
     # Database settings
     DB_USER: str
