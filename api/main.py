@@ -1,7 +1,6 @@
 import io
 import os
 import uuid
-from datetime import datetime
 from typing import List
 
 import requests
@@ -15,13 +14,11 @@ from keycloak.exceptions import KeycloakError
 from keycloak.exceptions import KeycloakGetError
 from minio import Minio
 from minio.error import S3Error
-from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, String, JSON, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session
 
 from db.database import engine, SessionLocal
 from models.file import Base, FileMetadata
+from crud import file as file_crud
 from schemas.auth import UserRegistration, TokenResponse, UserLogin, User
 from schemas.file import FileInfo
 
@@ -303,16 +300,15 @@ async def upload_file(
             tika_metadata = tika_metadata_response.json()
 
             # Store in PostgreSQL
-            file_metadata = FileMetadata(
-                id=file_id,
+            file_crud.create_file_metadata(
+                db=db,
+                file_id=file_id,
                 filename=file.filename,
                 content_type=file.content_type,
                 tika_metadata=tika_metadata,
                 content=tika_content,
                 user_id=user.sub
             )
-            db.add(file_metadata)
-            db.commit()
 
         except requests.RequestException as e:
             print(f"TIKA processing error: {e}")
@@ -342,13 +338,13 @@ async def get_file_metadata(
     Get file metadata including TIKA extraction results
     """
     # Query the database for file metadata
-    file_metadata = db.query(FileMetadata).filter(FileMetadata.id == file_id).first()
+    file_metadata = file_crud.get_file_metadata(db, file_id)
 
     if not file_metadata:
         raise HTTPException(status_code=404, detail="File metadata not found")
 
     # Check if user has access to the file
-    if file_metadata.user_id != user.sub and "admin" not in user.roles:
+    if file_crud.user_owns_file(db, file_id, user.sub) and "admin" not in user.roles:
         raise HTTPException(status_code=403, detail="Access denied")
 
     return {
@@ -444,18 +440,18 @@ async def delete_file(
         stat = minio_client.stat_object(BUCKET_NAME, file_id)
 
         # Check if user has access to the file
-        if user.sub != stat.metadata.get("x-amz-meta-user_id") and "admin" not in user.roles:
+        if not file_crud.user_owns_file(db, file_id, user.sub)  and "admin" not in user.roles:
             raise HTTPException(status_code=403, detail="Access denied")
 
         # Delete from MinIO
         minio_client.remove_object(BUCKET_NAME, file_id)
 
         # Delete metadata from PostgreSQL
-        file_metadata = db.query(FileMetadata).filter(FileMetadata.id == file_id).first()
-        if file_metadata:
-            db.delete(file_metadata)
-            db.commit()
-
-        return {"message": f"Successfully deleted {stat.metadata.get('x-amz-meta-filename', file_id)} and its metadata"}
+        if file_crud.delete_file_metadata(db, file_id):
+            return {
+                "message": f"Successfully deleted {stat.metadata.get('x-amz-meta-filename', file_id)} and its metadata"
+            }
+        else:
+            raise HTTPException(status_code=404, detail="File metadata not found")
     except S3Error as e:
         raise HTTPException(status_code=404, detail="File not found")
