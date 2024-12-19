@@ -1,6 +1,6 @@
-# OPIN API
+# ODIN API
 
-OPIN API is a FastAPI-based project that provides file management and authentication services using MinIO for storage and Keycloak for authentication.
+ODIN API is a FastAPI-based project that provides file management and authentication services using MinIO for storage and Keycloak for authentication.
 
 ## Features
 

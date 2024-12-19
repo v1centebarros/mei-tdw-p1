@@ -6,10 +6,10 @@ from pydantic.v1 import BaseSettings
 
 class Settings(BaseSettings):
     # Project settings
-    PROJECT_NAME: str = "OPIN API"
+    PROJECT_NAME: str = "ODIN API"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
-    DESCRIPTION: str = "OPIN API"
+    DESCRIPTION: str = "ODIN API"
 
     # Database settings
     DB_USER: str
