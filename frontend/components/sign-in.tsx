@@ -9,12 +9,13 @@ export default function SignIn() {
                 <SidebarMenuButton
                     size="lg"
                     className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                    onClick={() => signIn("keycloak")}
                 >
                     <Avatar className="h-8 w-8 rounded-lg">
                         <LogIn/>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                        <span className="truncate font-semibold" onClick={() => signIn("keycloak")}>Log In</span>
+                        <span className="truncate font-semibold">Log In</span>
                     </div>
                 </SidebarMenuButton>
             </SidebarMenuItem>
