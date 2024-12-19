@@ -15,13 +15,13 @@ Odin addresses this challenge by providing an innovative file repository platfor
 
 1. **File Upload and Analysis**
 
-	- [ ] Support for multiple document types (PDF).
-	- [ ] Text scraping and content extraction.
+	- [x] Support for multiple document types (PDF).
+	- [x] Text scraping and content extraction.
 	- [ ] Automatic identification of keywords and metadata.
 1. **Document Search Engine**
-	- [ ] Keyword or phrase-based search functionality.
+	- [x] Keyword or phrase-based search functionality.
 	- [ ] Display of related documents based on search queries.
-	- [ ] Highlighting key parts in documents where keywords/phrases appear.
+	- [x] Highlighting key parts in documents where keywords/phrases appear.
 1. **Document Organization**
     - [ ] Automatic indexing and categorization of uploaded files.
     - [ ] Metadata-driven organization for easy document retrieval.
