@@ -1,12 +1,13 @@
 import {Drawer, DrawerContent, DrawerTitle, DrawerTrigger} from "@/components/ui/drawer";
 import {Button} from "@/components/ui/button";
+import {Upload} from "lucide-react";
 
 export function FileUpload() {
     return (
         <Drawer>
-            <DrawerTitle>Upload File</DrawerTitle>
+            <DrawerTitle hidden>Upload File</DrawerTitle>
             <DrawerTrigger asChild>
-                <Button variant={"destructive"}>Upload File</Button>
+                <Upload className="h-4 w-4"/>
             </DrawerTrigger>
             <DrawerContent>
 
