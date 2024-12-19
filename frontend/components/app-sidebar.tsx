@@ -13,8 +13,13 @@ import {
 } from "@/components/ui/sidebar"
 import Image from "next/image";
 import {sidebar} from "@/lib/primitives";
+import SignIn from "@/components/sign-in";
+import {useSession} from "next-auth/react";
 
 export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
+
+    const {status, data:session} = useSession();
+
     return (<Sidebar collapsible="icon" {...props}>
         <SidebarHeader>
             <SidebarMenu>
@@ -40,7 +45,11 @@ export function AppSidebar({...props}: React.ComponentProps<typeof Sidebar>) {
             <NavMain items={sidebar.navMain}/>
         </SidebarContent>
         <SidebarFooter>
-            <NavUser user={sidebar.user}/>
+
+            {status === "authenticated" && <NavUser user={session?.user}/>}
+            {status === "unauthenticated" && <SignIn/>}
+
+            {/*<NavUser user={sidebar.user}/>*/}
         </SidebarFooter>
         <SidebarRail/>
     </Sidebar>)
