@@ -50,7 +50,7 @@ services:
       - 8080:8080
 
   keycloakdb:
-    image: postgres:alpine
+    image: timescale/timescaledb:latest-pg17
     ports:
       - 5432:5432
     volumes:
@@ -64,8 +64,6 @@ services:
       API_DB_NAME: api
       API_DB_USER: api
       API_DB_PASSWORD: password
-      
-      
       
   tika:
     image: apache/tika
