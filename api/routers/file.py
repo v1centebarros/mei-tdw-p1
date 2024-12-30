@@ -82,6 +82,99 @@ async def upload_file(
         file.file.close()
 
 
+@router.post("/upload/bulk/", status_code=201)
+async def upload_multiple_files(
+        files: list[UploadFile] = File(...),
+        user: User = Security(get_current_user, scopes=["file:write"]),
+        db: Session = Depends(get_db)
+):
+    """
+    Upload multiple files to MinIO storage and process with TIKA
+
+    Returns a list of upload results for each file, including success status and any errors
+    """
+    results = []
+
+    for file in files:
+        try:
+            file_id = uuid.uuid4().hex
+            file_content = await file.read()
+
+            # Upload to MinIO with user metadata
+            metadata = {
+                "filename": file.filename,
+                "user_id": user.sub,
+                "username": user.username
+            }
+
+            await minio_service.upload_file(
+                file_id=file_id,
+                file_data=io.BytesIO(file_content),
+                file_size=len(file_content),
+                metadata=metadata
+            )
+
+            tika_processed = False
+            # Send to TIKA for content extraction
+            try:
+                content, tika_metadata = await tika_service.process_file(
+                    file_content=file_content,
+                    content_type=file.content_type
+                )
+
+                # Store metadata in database
+                file_crud.create_file_metadata(
+                    db=db,
+                    file_id=file_id,
+                    filename=file.filename,
+                    content_type=file.content_type,
+                    tika_metadata=tika_metadata,
+                    content=content,
+                    user_id=user.sub
+                )
+                tika_processed = True
+
+            except requests.RequestException as e:
+                print(f"TIKA processing error for {file.filename}: {e}")
+                # Continue with next file even if TIKA fails
+
+            results.append({
+                "filename": file.filename,
+                "file_id": file_id,
+                "success": True,
+                "tika_processed": tika_processed
+            })
+
+        except S3Error as e:
+            results.append({
+                "filename": file.filename,
+                "success": False,
+                "error": str(e)
+            })
+        except Exception as e:
+            results.append({
+                "filename": file.filename,
+                "success": False,
+                "error": f"Unexpected error: {str(e)}"
+            })
+        finally:
+            file.file.close()
+
+    # Calculate summary statistics
+    total_files = len(files)
+    successful_uploads = len([r for r in results if r["success"]])
+    failed_uploads = total_files - successful_uploads
+
+    return {
+        "message": f"Processed {total_files} files",
+        "summary": {
+            "total_files": total_files,
+            "successful_uploads": successful_uploads,
+            "failed_uploads": failed_uploads
+        },
+        "results": results
+    }
+
 # Add new endpoint to get file metadata
 @router.get("/files/{file_id}/metadata")
 async def get_file_metadata(
