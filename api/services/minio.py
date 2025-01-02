@@ -1,4 +1,7 @@
+import unicodedata
 from typing import BinaryIO, Dict, Optional
+
+import magic
 from minio.error import S3Error
 from fastapi import HTTPException
 
@@ -19,18 +22,28 @@ class MinioService:
             file_data: BinaryIO,
             file_size: int,
             metadata: Dict[str, str]
-    ) -> bool:
+    ) -> str:
         """Upload a file to MinIO"""
         try:
+            mime = magic.Magic(mime=True)
+            content_type = mime.from_buffer(file_data.read(1024))
+            file_data.seek(0)
+            metadata["filename"] = metadata["filename"].encode('ascii', 'ignore').decode('ascii')
+
             self.client.put_object(
                 self.bucket_name,
                 file_id,
                 data=file_data,
+                content_type=content_type,
                 length=file_size,
                 metadata=metadata,
                 part_size=10 * 1024 * 1024  # 10MB parts
             )
-            return True
+
+            url = self.client.presigned_get_object(self.bucket_name, file_id)
+            print(url)
+            return url
+
         except S3Error as e:
             raise HTTPException(status_code=500, detail=f"MinIO error: {str(e)}")
 

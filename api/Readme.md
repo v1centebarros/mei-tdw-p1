@@ -6,7 +6,7 @@ ODIN API is a FastAPI-based project that provides file management and authentica
 
 - **File Management**: Upload, download, list, and delete files.
 - **Authentication**: User registration, login, token refresh, and logout using Keycloak.
-- **Content Extraction**: Process uploaded files with Apache Tika for content extraction.
+- **Content Extraction**: Process uploaded files with Docling for content extraction.
 
 ## Requirements
 
@@ -52,7 +52,6 @@ ODIN API is a FastAPI-based project that provides file management and authentica
     MINIO_HOST=your_minio_host
     MINIO_ACCESS_KEY=your_minio_access_key
     MINIO_SECRET_KEY=your_minio_secret_key
-    TIKA_URL=your_tika_url
     ```
 
 ## Usage
@@ -78,8 +77,8 @@ ODIN API is a FastAPI-based project that provides file management and authentica
 
 ### File Management
 
-- **POST** `/api/upload/`: Upload a file to MinIO storage and process with Tika.
-- **GET** `/api/files/{file_id}/metadata`: Get file metadata including Tika extraction results.
+- **POST** `/api/upload/`: Upload a file to MinIO storage and process with Docling.
+- **GET** `/api/files/{file_id}/metadata`: Get file metadata including docling extraction results.
 - **GET** `/api/files/`: List all files in the storage.
 - **GET** `/api/files/{file_id}`: Download a file from storage.
 - **DELETE** `/api/files/{file_id}`: Delete a file from storage and its associated metadata.

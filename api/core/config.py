@@ -33,8 +33,6 @@ class Settings(BaseSettings):
     MINIO_SECURE: bool = False
     MINIO_BUCKET_NAME: str
 
-    # TIKA settings
-    TIKA_URL: str
 
     class Config:
         env_file = ".env"

@@ -10,7 +10,7 @@ class FileMetadata(Base):
     id = Column(String, primary_key=True)
     filename = Column(String)
     content_type = Column(String)
-    tika_metadata = Column(JSON)
+    file_metadata = Column(JSON)
     content = Column(String)
     user_id = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)

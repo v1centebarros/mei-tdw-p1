@@ -15,10 +15,10 @@ from db.database import get_db
 from schemas.auth import User
 from schemas.file import FileInfo
 from services.minio import MinioService
-from services.tika import TikaService
+from services.docling import DocumentService
 
 minio_service = MinioService()
-tika_service = TikaService()
+document_service = DocumentService()
 
 router = APIRouter(tags=['File Management'])
 
@@ -29,7 +29,7 @@ async def upload_file(
         db: Session = Depends(get_db)
 ):
     """
-    Upload a file to MinIO storage and process with TIKA
+    Upload a file to MinIO storage and process with Docling
     """
     try:
         file_id = uuid.uuid4().hex
@@ -41,18 +41,17 @@ async def upload_file(
             "user_id": user.sub,
             "username": user.username
         }
-        await minio_service.upload_file(
+        minio_entry = await minio_service.upload_file(
             file_id=file_id,
             file_data=io.BytesIO(file_content),
             file_size=len(file_content),
             metadata=metadata
         )
 
-        # Send to TIKA for content extraction
+        # Send to Docling for content extraction
         try:
-            content, tika_metadata = await tika_service.process_file(
-                file_content=file_content,
-                content_type=file.content_type
+            markdown_content, file_metadata = await document_service.process_file(
+                source=minio_entry
             )
 
             # Store metadata in database
@@ -61,19 +60,19 @@ async def upload_file(
                 file_id=file_id,
                 filename=file.filename,
                 content_type=file.content_type,
-                tika_metadata=tika_metadata,
-                content=content,
+                file_metadata=file_metadata,
+                content=markdown_content,
                 user_id=user.sub
             )
 
         except requests.RequestException as e:
-            print(f"TIKA processing error: {e}")
+            print(f"Docling processing error: {e}")
             pass
 
         return {
             "message": f"Successfully uploaded {file.filename}",
             "file_id": file_id,
-            "tika_processed": True
+            "docling_processed": True
         }
 
     except S3Error as e:
@@ -89,7 +88,7 @@ async def upload_multiple_files(
         db: Session = Depends(get_db)
 ):
     """
-    Upload multiple files to MinIO storage and process with TIKA
+    Upload multiple files to MinIO storage and process with Docling
 
     Returns a list of upload results for each file, including success status and any errors
     """
@@ -107,19 +106,18 @@ async def upload_multiple_files(
                 "username": user.username
             }
 
-            await minio_service.upload_file(
+            minio_entry = await minio_service.upload_file(
                 file_id=file_id,
                 file_data=io.BytesIO(file_content),
                 file_size=len(file_content),
                 metadata=metadata
             )
 
-            tika_processed = False
-            # Send to TIKA for content extraction
+            docling_processed = False
+            # Send to Docling for content extraction
             try:
-                content, tika_metadata = await tika_service.process_file(
-                    file_content=file_content,
-                    content_type=file.content_type
+                markdown_content, file_metadata = await document_service.process_file(
+                    source=minio_entry
                 )
 
                 # Store metadata in database
@@ -128,21 +126,21 @@ async def upload_multiple_files(
                     file_id=file_id,
                     filename=file.filename,
                     content_type=file.content_type,
-                    tika_metadata=tika_metadata,
-                    content=content,
+                    file_metadata=file_metadata,
+                    content=markdown_content,
                     user_id=user.sub
                 )
-                tika_processed = True
+                docling_processed = True
 
             except requests.RequestException as e:
-                print(f"TIKA processing error for {file.filename}: {e}")
+                print(f"Docling processing error for {file.filename}: {e}")
                 # Continue with next file even if TIKA fails
 
             results.append({
                 "filename": file.filename,
                 "file_id": file_id,
                 "success": True,
-                "tika_processed": tika_processed
+                "docling_processed": docling_processed
             })
 
         except S3Error as e:
@@ -183,7 +181,7 @@ async def get_file_metadata(
         db: Session = Depends(get_db)
 ):
     """
-    Get file metadata including TIKA extraction results
+    Get file metadata including Docling extraction results
     """
     # Query the database for file metadata
     file_metadata = file_crud.get_file_metadata(db, file_id)
