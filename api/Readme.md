@@ -7,6 +7,7 @@ ODIN API is a FastAPI-based project that provides file management and authentica
 - **File Management**: Upload, download, list, and delete files.
 - **Authentication**: User registration, login, token refresh, and logout using Keycloak.
 - **Content Extraction**: Process uploaded files with Docling for content extraction.
+- **API Documentation**: Interactive API documentation using Swagger UI.
 
 ## Requirements
 
@@ -14,6 +15,7 @@ ODIN API is a FastAPI-based project that provides file management and authentica
 - PostgreSQL
 - MinIO
 - Keycloak
+- Docling
 
 ## Installation
 
@@ -78,8 +80,16 @@ ODIN API is a FastAPI-based project that provides file management and authentica
 ### File Management
 
 - **POST** `/api/upload/`: Upload a file to MinIO storage and process with Docling.
+- **POST** `/api/upload/bulk/`: Upload multiple files to MinIO storage and process with Docling.
 - **GET** `/api/files/{file_id}/metadata`: Get file metadata including docling extraction results.
 - **GET** `/api/files/`: List all files in the storage.
 - **GET** `/api/files/{file_id}`: Download a file from storage.
 - **DELETE** `/api/files/{file_id}`: Delete a file from storage and its associated metadata.
 
+### Search
+
+- **GET** `/api/search/`: Search for files by query string and category.
+- **GET** `/api/contextualsearch/`: Search for files by context.
+
+### Categories
+- **GET** `/api/categories/`: List all categories.
