@@ -11,16 +11,20 @@ from sqlalchemy.orm import Session
 
 from core.security import get_current_user
 from crud import file as file_crud
+from crud import vectorSearch as vector_search_crud
 from db.database import get_db
 from schemas.auth import User
 from schemas.file import FileInfo
 from services.minio import MinioService
 from services.docling import DocumentService
+from services.vectorSearch import VectorSearchService
 
 minio_service = MinioService()
 document_service = DocumentService()
+vector_search_service = VectorSearchService()
 
 router = APIRouter(tags=['File Management'])
+
 
 @router.post("/upload/", status_code=201)
 async def upload_file(
@@ -65,9 +69,19 @@ async def upload_file(
                 user_id=user.sub
             )
 
+
         except requests.RequestException as e:
             print(f"Docling processing error: {e}")
-            pass
+            return
+
+        # embbed the text
+        try:
+            vectors = vector_search_service.index(markdown_content)
+            vector_search_crud.create_vector_entries(db, vectors, file_id)
+
+        except Exception as e:
+            print(f"Embedding error: {e}")
+            return
 
         return {
             "message": f"Successfully uploaded {file.filename}",
@@ -172,6 +186,7 @@ async def upload_multiple_files(
         },
         "results": results
     }
+
 
 # Add new endpoint to get file metadata
 @router.get("/files/{file_id}/metadata")

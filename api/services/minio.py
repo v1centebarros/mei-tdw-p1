@@ -40,9 +40,7 @@ class MinioService:
                 part_size=10 * 1024 * 1024  # 10MB parts
             )
 
-            url = self.client.presigned_get_object(self.bucket_name, file_id)
-            print(url)
-            return url
+            return self.client.presigned_get_object(self.bucket_name, file_id)
 
         except S3Error as e:
             raise HTTPException(status_code=500, detail=f"MinIO error: {str(e)}")

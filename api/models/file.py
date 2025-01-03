@@ -1,5 +1,8 @@
 from datetime import datetime
-from sqlalchemy import Column, String, JSON, DateTime
+from uuid import uuid4
+
+from sqlalchemy import Column, String, JSON, DateTime, ForeignKey
+from pgvector.sqlalchemy import Vector
 
 from db.database import Base
 
@@ -15,3 +18,13 @@ class FileMetadata(Base):
     user_id = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class FileEmbedding(Base):
+    __tablename__ = "file_embeddings"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid4()))
+    file_id = Column(String, ForeignKey("file_metadata.id"))
+    embedding = Column(Vector(384))
+    segment_id = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
