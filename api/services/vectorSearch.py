@@ -61,7 +61,8 @@ class VectorSearchService:
                 "filename": file.filename,
                 "content_type": file.content_type,
                 "content_preview": content,
-                "rank": rank / count
+                "categories": file.categories,
+                "rank": 1 - rank / count
             })
 
-        return sorted(final_results, key=lambda x: x["rank"])
+        return sorted(final_results, key=lambda x: x["rank"], reverse=True)

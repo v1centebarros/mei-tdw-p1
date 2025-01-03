@@ -30,7 +30,8 @@ def format_tsquery(query: str) -> str:
 async def search_documents_full_content(
         query: str,
         user: User = Security(get_current_user, scopes=["file:read"]),
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        category: Optional[str] = None
 ):
     """
     Search through document content and return full documents with all matches highlighted.
@@ -49,15 +50,18 @@ async def search_documents_full_content(
                 fm.filename,
                 fm.content_type,
                 fm.content,
+                fm.categories,
                 ts_rank(to_tsvector('english', fm.content), plainto_tsquery('english', :query)) as rank
             FROM file_metadata fm
             WHERE to_tsvector('english', fm.content) @@ plainto_tsquery('english', :query)
-                AND (fm.user_id = :user_id OR :is_admin)
+                AND (fm.user_id = :user_id OR :is_admin) 
+                AND (:category IS NULL OR :category ILIKE ANY(fm.categories))
         )
         SELECT 
             sr.id,
             sr.filename,
             sr.content_type,
+            sr.categories,
             ts_headline(
                 'english',
                 sr.content,
@@ -83,7 +87,8 @@ async def search_documents_full_content(
             {
                 "query": query,
                 "user_id": user.sub,
-                "is_admin": "admin" in user.roles
+                "is_admin": "admin" in user.roles,
+                "category": category
             }
         )
 
@@ -95,12 +100,14 @@ async def search_documents_full_content(
                 "filename": row.filename,
                 "content_type": row.content_type,
                 "content_preview": row.content_preview,
+                "categories": row.categories,
                 "rank": float(row.rank)
             })
 
         return search_results
 
     except Exception as e:
+        raise
         print(f"Search error: {str(e)}")
         return []
 

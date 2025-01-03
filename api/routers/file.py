@@ -15,6 +15,7 @@ from crud import vectorSearch as vector_search_crud
 from db.database import get_db
 from schemas.auth import User
 from schemas.file import FileInfo
+from services.categories import CategoryService
 from services.minio import MinioService
 from services.docling import DocumentService
 from services.vectorSearch import VectorSearchService
@@ -22,6 +23,7 @@ from services.vectorSearch import VectorSearchService
 minio_service = MinioService()
 document_service = DocumentService()
 vector_search_service = VectorSearchService()
+categories_service = CategoryService()
 
 router = APIRouter(tags=['File Management'])
 
@@ -57,6 +59,7 @@ async def upload_file(
             markdown_content, file_metadata = await document_service.process_file(
                 source=minio_entry
             )
+            categories = categories_service.get_categories_for(markdown_content)
 
             # Store metadata in database
             file_crud.create_file_metadata(
@@ -66,7 +69,8 @@ async def upload_file(
                 content_type=file.content_type,
                 file_metadata=file_metadata,
                 content=markdown_content,
-                user_id=user.sub
+                user_id=user.sub,
+                categories=categories
             )
 
 
@@ -133,6 +137,7 @@ async def upload_multiple_files(
                 markdown_content, file_metadata = await document_service.process_file(
                     source=minio_entry
                 )
+                categories = categories_service.get_categories_for(markdown_content)
 
                 # Store metadata in database
                 file_crud.create_file_metadata(
@@ -142,7 +147,8 @@ async def upload_multiple_files(
                     content_type=file.content_type,
                     file_metadata=file_metadata,
                     content=markdown_content,
-                    user_id=user.sub
+                    user_id=user.sub,
+                    categories=categories
                 )
                 docling_processed = True
 

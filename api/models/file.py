@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Column, String, JSON, DateTime, ForeignKey, Integer
+from sqlalchemy import Column, String, JSON, DateTime, ForeignKey, Integer, ARRAY, Text
 from pgvector.sqlalchemy import Vector
 
 from db.database import Base
@@ -16,6 +16,7 @@ class FileMetadata(Base):
     file_metadata = Column(JSON)
     content = Column(String)
     user_id = Column(String)
+    categories = Column(ARRAY(Text))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
