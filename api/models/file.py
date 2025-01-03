@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Column, String, JSON, DateTime, ForeignKey
+from sqlalchemy import Column, String, JSON, DateTime, ForeignKey, Integer
 from pgvector.sqlalchemy import Vector
 
 from db.database import Base
@@ -26,5 +26,6 @@ class FileEmbedding(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid4()))
     file_id = Column(String, ForeignKey("file_metadata.id"))
     embedding = Column(Vector(384))
-    segment_id = Column(String)
+    start_position = Column(Integer)
+    end_position = Column(Integer)
     created_at = Column(DateTime, default=datetime.utcnow)

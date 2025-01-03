@@ -148,7 +148,16 @@ async def upload_multiple_files(
 
             except requests.RequestException as e:
                 print(f"Docling processing error for {file.filename}: {e}")
-                # Continue with next file even if TIKA fails
+                continue
+
+            # embbed the text
+            try:
+                vectors = vector_search_service.index(markdown_content)
+                vector_search_crud.create_vector_entries(db, vectors, file_id)
+
+            except Exception as e:
+                print(f"Embedding error: {e}")
+                continue
 
             results.append({
                 "filename": file.filename,

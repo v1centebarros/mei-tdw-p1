@@ -7,7 +7,9 @@ from core.security import get_current_user
 from db.database import get_db
 from schemas.auth import User
 from schemas.search import SearchResult
+from services.vectorSearch import VectorSearchService
 
+vector_search_service = VectorSearchService()
 router = APIRouter(tags=['Search'])
 
 
@@ -101,3 +103,15 @@ async def search_documents_full_content(
     except Exception as e:
         print(f"Search error: {str(e)}")
         return []
+
+
+@router.get("/contextualsearch/", response_model=List[SearchResult])
+async def search_documents_contextual_content(
+        query: str,
+        user: User = Security(get_current_user, scopes=["file:read"]),
+        db: Session = Depends(get_db)
+):
+    """
+    Search through document content and return contextual snippets with matches highlighted.
+    """
+    return vector_search_service.search_by_vector(db, query)
