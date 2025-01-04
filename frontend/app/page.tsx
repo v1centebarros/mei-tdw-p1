@@ -1,7 +1,7 @@
-
 export default function Home() {
-    return (<>
-            <h1>Hello World!</h1>
-        </>
+    return (<div className={"container mx-auto"}>
+            <p>LANDING PAGE</p>
+
+        </div>
     );
 }
