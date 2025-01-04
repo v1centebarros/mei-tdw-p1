@@ -5,6 +5,7 @@ class SearchResult(BaseModel):
     filename: str
     content_type: str
     content_preview: str
+    categories: list[str]
     rank: float
     
     class Config:

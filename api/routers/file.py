@@ -11,16 +11,22 @@ from sqlalchemy.orm import Session
 
 from core.security import get_current_user
 from crud import file as file_crud
+from crud import vectorSearch as vector_search_crud
 from db.database import get_db
 from schemas.auth import User
 from schemas.file import FileInfo
+from services.categories import CategoryService
 from services.minio import MinioService
-from services.tika import TikaService
+from services.docling import DocumentService
+from services.vectorSearch import VectorSearchService
 
 minio_service = MinioService()
-tika_service = TikaService()
+document_service = DocumentService()
+vector_search_service = VectorSearchService()
+categories_service = CategoryService()
 
 router = APIRouter(tags=['File Management'])
+
 
 @router.post("/upload/", status_code=201)
 async def upload_file(
@@ -29,7 +35,7 @@ async def upload_file(
         db: Session = Depends(get_db)
 ):
     """
-    Upload a file to MinIO storage and process with TIKA
+    Upload a file to MinIO storage and process with Docling
     """
     try:
         file_id = uuid.uuid4().hex
@@ -41,19 +47,19 @@ async def upload_file(
             "user_id": user.sub,
             "username": user.username
         }
-        await minio_service.upload_file(
+        minio_entry = await minio_service.upload_file(
             file_id=file_id,
             file_data=io.BytesIO(file_content),
             file_size=len(file_content),
             metadata=metadata
         )
 
-        # Send to TIKA for content extraction
+        # Send to Docling for content extraction
         try:
-            content, tika_metadata = await tika_service.process_file(
-                file_content=file_content,
-                content_type=file.content_type
+            markdown_content, file_metadata = await document_service.process_file(
+                source=minio_entry
             )
+            categories = categories_service.get_categories_for(markdown_content)
 
             # Store metadata in database
             file_crud.create_file_metadata(
@@ -61,19 +67,30 @@ async def upload_file(
                 file_id=file_id,
                 filename=file.filename,
                 content_type=file.content_type,
-                tika_metadata=tika_metadata,
-                content=content,
-                user_id=user.sub
+                file_metadata=file_metadata,
+                content=markdown_content,
+                user_id=user.sub,
+                categories=categories
             )
 
+
         except requests.RequestException as e:
-            print(f"TIKA processing error: {e}")
-            pass
+            print(f"Docling processing error: {e}")
+            return
+
+        # embbed the text
+        try:
+            vectors = vector_search_service.index(markdown_content)
+            vector_search_crud.create_vector_entries(db, vectors, file_id)
+
+        except Exception as e:
+            print(f"Embedding error: {e}")
+            return
 
         return {
             "message": f"Successfully uploaded {file.filename}",
             "file_id": file_id,
-            "tika_processed": True
+            "docling_processed": True
         }
 
     except S3Error as e:
@@ -89,7 +106,7 @@ async def upload_multiple_files(
         db: Session = Depends(get_db)
 ):
     """
-    Upload multiple files to MinIO storage and process with TIKA
+    Upload multiple files to MinIO storage and process with Docling
 
     Returns a list of upload results for each file, including success status and any errors
     """
@@ -107,20 +124,20 @@ async def upload_multiple_files(
                 "username": user.username
             }
 
-            await minio_service.upload_file(
+            minio_entry = await minio_service.upload_file(
                 file_id=file_id,
                 file_data=io.BytesIO(file_content),
                 file_size=len(file_content),
                 metadata=metadata
             )
 
-            tika_processed = False
-            # Send to TIKA for content extraction
+            docling_processed = False
+            # Send to Docling for content extraction
             try:
-                content, tika_metadata = await tika_service.process_file(
-                    file_content=file_content,
-                    content_type=file.content_type
+                markdown_content, file_metadata = await document_service.process_file(
+                    source=minio_entry
                 )
+                categories = categories_service.get_categories_for(markdown_content)
 
                 # Store metadata in database
                 file_crud.create_file_metadata(
@@ -128,21 +145,31 @@ async def upload_multiple_files(
                     file_id=file_id,
                     filename=file.filename,
                     content_type=file.content_type,
-                    tika_metadata=tika_metadata,
-                    content=content,
-                    user_id=user.sub
+                    file_metadata=file_metadata,
+                    content=markdown_content,
+                    user_id=user.sub,
+                    categories=categories
                 )
-                tika_processed = True
+                docling_processed = True
 
             except requests.RequestException as e:
-                print(f"TIKA processing error for {file.filename}: {e}")
-                # Continue with next file even if TIKA fails
+                print(f"Docling processing error for {file.filename}: {e}")
+                continue
+
+            # embbed the text
+            try:
+                vectors = vector_search_service.index(markdown_content)
+                vector_search_crud.create_vector_entries(db, vectors, file_id)
+
+            except Exception as e:
+                print(f"Embedding error: {e}")
+                continue
 
             results.append({
                 "filename": file.filename,
                 "file_id": file_id,
                 "success": True,
-                "tika_processed": tika_processed
+                "docling_processed": docling_processed
             })
 
         except S3Error as e:
@@ -175,6 +202,7 @@ async def upload_multiple_files(
         "results": results
     }
 
+
 # Add new endpoint to get file metadata
 @router.get("/files/{file_id}/metadata")
 async def get_file_metadata(
@@ -183,7 +211,7 @@ async def get_file_metadata(
         db: Session = Depends(get_db)
 ):
     """
-    Get file metadata including TIKA extraction results
+    Get file metadata including Docling extraction results
     """
     # Query the database for file metadata
     file_metadata = file_crud.get_file_metadata(db, file_id)

@@ -11,8 +11,9 @@ def create_file_metadata(
         file_id: str,
         filename: str,
         content_type: str,
-        tika_metadata: dict,
+        file_metadata: dict,
         content: str,
+        categories: list[str],
         user_id: str
 ) -> FileMetadata:
     """Create new file metadata entry"""
@@ -20,7 +21,8 @@ def create_file_metadata(
         id=file_id,
         filename=filename,
         content_type=content_type,
-        tika_metadata=tika_metadata,
+        file_metadata=file_metadata,
+        categories=categories,
         content=content,
         user_id=user_id
     )
@@ -56,14 +58,16 @@ def get_all_files(
 def update_file_metadata(
         db: Session,
         file_id: str,
-        tika_metadata: dict,
-        content: str
+        file_metadata: dict,
+        content: str,
+        categories: list[str]
 ) -> Optional[FileMetadata]:
     """Update file metadata"""
     db_file = get_file_metadata(db, file_id)
     if db_file:
-        db_file.tika_metadata = tika_metadata
+        db_file.file_metadata = file_metadata
         db_file.content = content
+        db_file.categories = categories
         db_file.updated_at = datetime.utcnow()
         db.commit()
         db.refresh(db_file)

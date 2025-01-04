@@ -17,7 +17,7 @@ class FileMetadataResponse(BaseModel):
     file_id: str
     filename: str
     content_type: str
-    metadata: Dict[str, Any]
+    file_metadata: Dict[str, Any]
     content: str
     created_at: datetime
     updated_at: datetime
@@ -30,7 +30,7 @@ class FileUploadResponse(BaseModel):
     """Schema for file upload response"""
     message: str
     file_id: str
-    tika_processed: bool
+    docling_processed: bool
 
 
 class FileDeleteResponse(BaseModel):
