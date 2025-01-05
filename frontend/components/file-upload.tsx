@@ -78,7 +78,7 @@ export function FileUpload() {
                     }}
                     showFilesList={true}
                 />
-                <div className="grid pt-2">
+                <div className="flex flex-col gap-y-2 pt-2">
                     {files.map((file) => (<FileUploadCard file={file} key={file.name} onDelete={deleteFile}/>))}
                 </div>
                 {filesUploadMutation.isPending && <div>Uploading...</div>}
