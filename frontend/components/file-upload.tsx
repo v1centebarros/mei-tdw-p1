@@ -83,7 +83,7 @@ export function FileUpload() {
                 </div>
                 {filesUploadMutation.isPending && <div>Uploading...</div>}
                 <DrawerFooter>
-                    <DrawerClose>
+                    <DrawerClose asChild>
                         <Button onClick={onSubmit}>Submit</Button>
                     </DrawerClose>
                 </DrawerFooter>
