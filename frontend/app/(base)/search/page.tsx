@@ -1,8 +1,12 @@
+import {Construction} from "lucide-react";
 
 export default async function Page(){
     return (
         <div>
-            <p>LANDING PAGE</p>
+            <Construction />
+            <p>
+                UNDER CONSTRUCTION
+            </p>
         </div>
     )
 }

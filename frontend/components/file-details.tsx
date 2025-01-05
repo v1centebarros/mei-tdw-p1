@@ -17,9 +17,11 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuLabel,
-    DropdownMenuRadioGroup, DropdownMenuRadioItem,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import {formatRelative} from "date-fns";
 
 
 const fontSizes = [{
@@ -51,42 +53,40 @@ export function FileDetails() {
         toast({title: "Copied to clipboard", description: "File content copied to clipboard"});
     }
 
-    if (isSuccess) return <div>
-        <div className={"w-full mx-auto"}>
-            <p>
-                <span className={"text-4xl font-bold"}>{fileData?.filename}</span>
-                <span className={"text-lg font-light"}>{fileData?.content_type}</span>
-            </p>
+    if (isSuccess) return <div className={"max-w-full mx-auto"}>
+        <p>
+            <span className={"text-4xl font-bold"}>{fileData?.filename}</span>
+            <span className={"text-lg font-light"}>{fileData?.content_type}</span>
+        </p>
 
-            <p>Uploaded By: {fileData?.user_id}</p>
-            <p>Uploaded At: {fileData?.created_at}</p>
+        <p>Uploaded By: {fileData?.user_id}</p>
+        <p>Uploaded {formatRelative(new Date(fileData?.created_at), new Date())}</p>
 
-            {fileData?.categories?.map((category: string, index: number) => <Badge key={index}
-                                                                                   className={"mr-2"}>{category}</Badge>)}
-            <Separator orientation={"horizontal"} className={"my-4"}/>
+        {fileData?.categories?.map((category: string, index: number) => <Badge key={index}
+                                                                               className={"mr-2"}>{category}</Badge>)}
+        <Separator orientation={"horizontal"} className={"my-4"}/>
 
-            <div className={"flex gap-x-1 pb-4"}>
-                <Button variant={"outline"} onClick={() => setExpanded(!expanded)}>{expanded ? <Minimize2/> : <Maximize2/>}</Button>
-                <DropdownMenu>
-                    <DropdownMenuTrigger type={"button"} color={"primary"} asChild>
-                        <Button variant={"outline"}><TypeIcon/></Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuLabel>Font Size</DropdownMenuLabel>
-                        <DropdownMenuRadioGroup value={fontSize} onValueChange={setFontSize}>
-                            {fontSizes.map(({label, value}) => <DropdownMenuRadioItem value={value} key={value}>
-                                {label}
-                            </DropdownMenuRadioItem>)}
-                        </DropdownMenuRadioGroup>
-                    </DropdownMenuContent>
+        <div className={"flex gap-x-1 pb-4"}>
+            <Button variant={"outline"} onClick={() => setExpanded(!expanded)}>{expanded ? <Minimize2/> :
+                <Maximize2/>}</Button>
+            <DropdownMenu>
+                <DropdownMenuTrigger type={"button"} color={"primary"} asChild>
+                    <Button variant={"outline"}><TypeIcon/></Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuLabel>Font Size</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup value={fontSize} onValueChange={setFontSize}>
+                        {fontSizes.map(({label, value}) => <DropdownMenuRadioItem value={value} key={value}>
+                            {label}
+                        </DropdownMenuRadioItem>)}
+                    </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
                 <Button onClick={copyToClipboard} variant={"outline"}><ClipboardCopy/></Button>
-                </DropdownMenu>
-            </div>
-            <Markdown
-                className={`transition-all duration-1000 ease-in-out mx-auto ${expanded ? "" : "px-48"} max-w-full prose ${fontSize} `}>
-                {fileData?.content}
-            </Markdown>
+            </DropdownMenu>
         </div>
+        <Markdown
+            className={`transition-all duration-1000 ease-in-out mx-auto ${expanded ? "" : "px-48"} max-w-full prose ${fontSize} `}>
+            {fileData?.content}
+        </Markdown>
     </div>
-
 }

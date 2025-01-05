@@ -11,7 +11,7 @@ import {signOut} from "next-auth/react"
 interface Props {
     user: {
         name: string
-        email: string
+        email: string,
     }
 }
 
