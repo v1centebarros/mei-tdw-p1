@@ -17,11 +17,13 @@ import {useSession} from "next-auth/react";
 import {useMutation} from "@tanstack/react-query";
 import {Button} from "@/components/ui/button";
 import {useToast} from "@/hooks/use-toast";
+import {getQueryClient} from "@/lib/getQueryClient";
 
 export function FileUpload() {
     const [files, setFiles] = useState<File[]>([]);
     const {data: session} = useSession()
     const {toast} = useToast();
+    const queryClient = getQueryClient();
 
     const filesUploadMutation = useMutation({
         mutationFn: async (files: File[]) => {
@@ -37,12 +39,14 @@ export function FileUpload() {
                 },
             });
             return response.json();
-        }, onSuccess: () => {
+        }, onSuccess: async () => {
             setFiles([]);
             toast({
                 title: "Files uploaded successfully",
                 description: "The files were uploaded successfully",
             })
+            await queryClient.invalidateQueries({queryKey:["files"]});
+
         }, onError: (error) => {
             toast({
                 title: "Error uploading files",
