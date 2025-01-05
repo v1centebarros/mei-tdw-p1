@@ -159,9 +159,16 @@ export default async function Page() {
                         Join thousands of researchers, students, and professionals who are already using Odin to unlock
                         insights from their documents.
                     </p>
-                    <Button size="lg" asChild>
-                        <Link href="/signup">Start Free Trial</Link>
-                    </Button>
+                    <form
+                        action={async () => {
+                            "use server"
+                            await signIn()
+                        }}
+                    >
+                        <Button size="lg">
+                            Get Started
+                        </Button>
+                    </form>
                 </div>
             </section>
 
@@ -171,7 +178,7 @@ export default async function Page() {
                     className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
                     <div className="flex items-center gap-2">
                         <Image
-                            src="/logo.png"
+                            src="/logo.svg"
                             alt="Odin Logo"
                             width={24}
                             height={24}
