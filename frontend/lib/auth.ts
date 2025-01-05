@@ -1,4 +1,4 @@
-import NextAuth from "next-auth"
+import NextAuth, {NextAuthConfig} from "next-auth"
 import Keycloak from "next-auth/providers/keycloak"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -20,6 +20,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         async session({ session, token }) {
             session.user.accessToken = token.accessToken
             return session
-        }
+        },
+        async authorized({auth,request:{nextUrl}}) {
+            const isLoggedIn = !!auth?.user;
+            const isOnHome = nextUrl.pathname === '/';
+
+            if (!isOnHome) {
+                return isLoggedIn;
+            }
+
+            if (isLoggedIn && isOnHome) {
+                return Response.redirect(new URL('/dashboard', nextUrl));
+            }
+            return true;
+        },
     }
-})
+} satisfies NextAuthConfig)

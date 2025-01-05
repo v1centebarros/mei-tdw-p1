@@ -2,7 +2,7 @@ import {LayoutDashboard, Library, Search, Sparkles} from "lucide-react";
 
 export const sidebar = {
     navMain: [{
-        title: "Dashboard", url: "/", icon: LayoutDashboard, isActive: true
+        title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, isActive: true
     }, {
         title: "Documents", url: "/documents", icon: Library,
     }, {
