@@ -112,13 +112,14 @@ async def search_documents_full_content(
         return []
 
 
-@router.get("/contextualsearch/", response_model=List[SearchResult])
+@router.get("/contextualsearch/")
 async def search_documents_contextual_content(
         query: str,
         user: User = Security(get_current_user, scopes=["file:read"]),
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        context_range: Optional[int] = 400
 ):
     """
     Search through document content and return contextual snippets with matches highlighted.
     """
-    return vector_search_service.search_by_vector(db, query)
+    return vector_search_service.search_by_vector(db, query, context_range)
