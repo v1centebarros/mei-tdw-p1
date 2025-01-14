@@ -22,6 +22,8 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import {formatRelative} from "date-fns";
+import remarkRehype from "remark-rehype";
+import remarkGfm from "remark-gfm";
 
 
 const fontSizes = [{
@@ -60,7 +62,7 @@ export function FileDetails() {
         </p>
 
         <p>Uploaded By: {fileData?.user_id}</p>
-        <p>Uploaded {formatRelative(new Date(fileData?.created_at), new Date())}</p>
+        {fileData?.created_at && <p>Uploaded {formatRelative(new Date(fileData?.created_at), new Date())}</p>}
 
         {fileData?.categories?.map((category: string, index: number) => <Badge key={index}
                                                                                className={"mr-2"}>{category}</Badge>)}
@@ -85,8 +87,13 @@ export function FileDetails() {
             </DropdownMenu>
         </div>
         <Markdown
-            className={`transition-all duration-1000 ease-in-out mx-auto ${expanded ? "" : "px-48"} max-w-full prose ${fontSize} `}>
+            className={`transition-all duration-1000 ease-in-out mx-auto ${expanded ? "" : "px-48"} max-w-full prose ${fontSize} `}
+            rehypePlugins={[remarkRehype]}
+            remarkPlugins={[remarkGfm]}
+            remarkRehypeOptions={{ passThrough: ['link'] }}
+        >
             {fileData?.content}
+
         </Markdown>
     </div>
 }
