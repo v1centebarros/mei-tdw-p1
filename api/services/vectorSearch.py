@@ -111,7 +111,7 @@ class VectorSearchService:
                 "file_id": file.id,
                 "filename": file.filename,
                 "content_type": file.content_type,
-                "content_preview": marked_sentences,  # List of marked sentences
+                "marked_sentences": marked_sentences,  # List of marked sentences
                 "categories": file.categories,
                 "rank": 1 - rank / count
             })
