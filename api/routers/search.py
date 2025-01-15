@@ -115,6 +115,7 @@ async def search_documents_full_content(
 @router.get("/contextualsearch/")
 async def search_documents_contextual_content(
         query: str,
+        filters: Optional[str] = "",
         user: User = Security(get_current_user, scopes=["file:read"]),
         db: Session = Depends(get_db),
         context_range: Optional[int] = 400
@@ -122,4 +123,11 @@ async def search_documents_contextual_content(
     """
     Search through document content and return contextual snippets with matches highlighted.
     """
-    return vector_search_service.search_by_vector(db, query, context_range)
+
+    """
+    cão AND NOT cat
+    cão
+    cachorro 
+    """
+
+    return vector_search_service.search_by_vector(db, query, filters, context_range)

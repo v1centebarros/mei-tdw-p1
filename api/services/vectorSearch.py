@@ -67,9 +67,9 @@ class VectorSearchService:
     #
     #     return sorted(final_results, key=lambda x: x["rank"], reverse=True)
 
-    def search_by_vector(self, db: Session, query: str, context_range: int = 400):
+    def search_by_vector(self, db: Session, query: str, filters: str, context_range: int = 400):
         query_vec = self.get_query_embedding(query)
-        results = search_by_vector(db, query_vec)
+        results = search_by_vector(db, query_vec, filters)
 
         final_results = []
         files = [res[1] for res in results]
