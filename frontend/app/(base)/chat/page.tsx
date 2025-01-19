@@ -11,7 +11,6 @@ export default function Page() {
 
     const {data: session} = useSession()
     const [chat, setChat] = useState<string>("")
-    const [response, setResponse] = useState<string>("")
     const [chatHistory, setChatHistory] = useState<string[]>([])
 
     useEffect(() => {
@@ -21,9 +20,9 @@ export default function Page() {
 
     const requestChat = useCallback(async (chat) => {
         // Reset response at the start of a new chat request
-        setChatHistory([...chatHistory, chat]);
+        setChatHistory(prev => [...prev, chat]);
         setChat("");
-        setResponse("");
+        let response = "";
 
         const eventSource = new EventSourcePolyfill(
             `${process.env.NEXT_PUBLIC_API_URL}/chat?question=${encodeURIComponent(chat)}`,
@@ -39,25 +38,25 @@ export default function Page() {
         eventSource.onmessage = (event) => {
             if (event.data === "") {
                 if (startedConnection) {
+                    setChatHistory(prev => [...prev, response]);
                     eventSource.close();
                 } else {
                     startedConnection = true;
                 }
             } else {
                 // Use functional update to properly accumulate responses
-                setResponse(event.data);
-
-                // Update chat history
-                setChatHistory([...chatHistory, event.data]);
+                response = event.data;
             }
         };
 
         eventSource.onerror = (error) => {
+            setChatHistory(prev => [...prev, response]);
             eventSource.close();
         };
 
         // Cleanup function
         return () => {
+            setChatHistory(prev => [...prev, response]);
             eventSource.close();
         };
     }, [session]);
