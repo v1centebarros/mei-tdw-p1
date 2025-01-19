@@ -6,7 +6,7 @@ from core.config import get_settings
 from core.minio import init_minio
 from db.database import engine
 from models.file import Base
-from routers import auth, file, search, categories
+from routers import auth, file, search, categories, chat
 
 # Load environment variables
 load_dotenv()
@@ -59,4 +59,4 @@ app.include_router(prefix="/api", router=auth.router)
 app.include_router(prefix="/api", router=file.router)
 app.include_router(prefix="/api", router=search.router)
 app.include_router(prefix="/api", router=categories.router)
-
+app.include_router(prefix="/api", router=chat.router)

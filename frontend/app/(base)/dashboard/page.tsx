@@ -16,7 +16,7 @@ export default async function Home() {
     void queryClient.prefetchQuery(filesOptions(session?.user.accessToken));
 
     return (<div className={"container mx-auto"}>
-            <h1 className={"text-6xl font-bold text-center"}>Files</h1>
+            <p className={"text-5xl text-center"}>My Files</p>
             <div className={"flex flex-row items-center gap-x-3 py-8"}>
                 <Input type="email" placeholder="Search" className={"max-w-xs"}/>
                 <Select>
