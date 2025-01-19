@@ -61,7 +61,7 @@ export function FileDetails() {
             <span className={"text-lg font-light"}>{fileData?.content_type}</span>
         </p>
 
-        <p>Uploaded By: {fileData?.user_id}</p>
+        {/*<p>Uploaded By: {fileData?.user_id}</p>*/}
         {fileData?.created_at && <p>Uploaded {formatRelative(new Date(fileData?.created_at), new Date())}</p>}
 
         {fileData?.categories?.map((category: string, index: number) => <Badge key={index}

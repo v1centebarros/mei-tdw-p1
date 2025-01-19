@@ -2,27 +2,41 @@
 
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
-import {useState} from "react";
-import { useSession } from "next-auth/react"
+import {useCallback, useEffect, useState} from "react";
+import {useSession} from "next-auth/react"
 import {EventSourcePolyfill} from "event-source-polyfill";
+import {Send} from "lucide-react";
 
 export default function Page() {
 
-    const [chat, setChat] = useState("")
-    const [response, setResponse] = useState("")
-    const { data: session } = useSession()
+    const {data: session} = useSession()
+    const [chat, setChat] = useState<string>("")
+    const [response, setResponse] = useState<string>("")
+    const [chatHistory, setChatHistory] = useState<string[]>([])
 
-    const requestChat = async (chat) => {
-        const eventSource = new EventSourcePolyfill(`${process.env.NEXT_PUBLIC_API_URL}/chat?question=${chat}`, {
-            headers: {
-                Authorization: `Bearer ${session?.user.accessToken}`
+    useEffect(() => {
+        console.log("Chat history updated", chatHistory)
+    }, [chatHistory])
+
+
+    const requestChat = useCallback(async (chat) => {
+        // Reset response at the start of a new chat request
+        setChatHistory([...chatHistory, chat]);
+        setChat("");
+        setResponse("");
+
+        const eventSource = new EventSourcePolyfill(
+            `${process.env.NEXT_PUBLIC_API_URL}/chat?question=${encodeURIComponent(chat)}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${session?.user.accessToken}`
+                }
             }
-        });
+        );
 
         let startedConnection = false;
 
         eventSource.onmessage = (event) => {
-            console.log(event.data);
             if (event.data === "") {
                 if (startedConnection) {
                     eventSource.close();
@@ -30,15 +44,44 @@ export default function Page() {
                     startedConnection = true;
                 }
             } else {
-                setResponse(response + event.data);
+                // Use functional update to properly accumulate responses
+                setResponse(event.data);
+
+                // Update chat history
+                setChatHistory([...chatHistory, event.data]);
             }
-        }
-    }
+        };
+
+        eventSource.onerror = (error) => {
+            eventSource.close();
+        };
+
+        // Cleanup function
+        return () => {
+            eventSource.close();
+        };
+    }, [session]);
+
     return (<>
-            <p>Chat</p>
-            <p>{JSON.stringify(response)}</p>
-            <Input type="text" placeholder="Chat" className={"max-w-xs"} onChange={(e) => setChat(e.target.value)}/>
-            <Button onClick={() => requestChat(chat)}>Send</Button>
+            <div className={"flex flex-col gap-y-4 border border-gray-300 p-4 rounded-md h-full"}>
+                <div className={"flex flex-1 flex-col gap-y-2 flex-grow overflow-y-auto p-4 space-y-4"}>
+                    {chatHistory.map((chat, index) => (
+                        <div key={index} className={`w-7/12 rounded-2xl p-4 flex flex-col gap-y-1 ${index % 2 === 0 ? 'justify-end bg-primary text-white' : 'justify-start border border-gray-300'}`}>
+                            <p className={`${index % 2 === 0 ? "text-white": "text-base"} font-bold text-xl`}>{index % 2 === 0 ? 'You' : 'Odin'}</p>
+                            <p className={"text-justify text-base"}>{chat}</p>
+                        </div>
+                    ))}
+                </div>
+
+                <div className={"flex flex-row gap-x-2"}>
+                    <Input type="text" placeholder="Start chatting with Odin" className={"flex-grow"}
+                           onChange={(e) => setChat(e.target.value)}
+                           onKeyDown={async (e) => { if (e.key === 'Enter') await requestChat(chat); }}
+                           value={chat}
+                    />
+                    <Button onClick={() => requestChat(chat)}><Send /></Button>
+                </div>
+            </div>
         </>
     )
 }

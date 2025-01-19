@@ -16,7 +16,7 @@ async def chat(
         user: User = Security(get_current_user, scopes=["file:write"]),
         db: Session = Depends(get_db),
 ):
-    response_stream = await rag_pipeline.query_documents(db, question, user.sub)
+    response_stream = rag_pipeline.query_documents(db, question, user.sub)
 
     return EventSourceResponse(response_stream, media_type="text/event-stream")
 

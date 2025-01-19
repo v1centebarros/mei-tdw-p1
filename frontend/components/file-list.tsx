@@ -27,7 +27,7 @@ export function FileList() {
 
     return <div>
         <div className={"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4"}>
-            {data?.map((file) => (
+            {data.length > 0  && data?.map((file) => (
                 <Card key={file.fileId} className={"hover:shadow-lg transition duration-300"}>
                     <CardHeader>
                         <CardTitle className={"truncate ..."}>{file.filename}</CardTitle>
