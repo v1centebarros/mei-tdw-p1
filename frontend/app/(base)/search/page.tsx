@@ -31,8 +31,8 @@ export default function Page() {
 
     return (<div>
         <p className={"text-5xl text-center"}>Contextual Search</p>
-        <div className={"flex flex-row justify-items-center gap-x-3 py-8"}>
-            <Input type="text" placeholder="Search" className={"max-w-xs"}
+        <div className={"flex justify-center gap-x-3 py-8 w-full"}>
+            <Input type="text" placeholder="Search" className={"max-w-md"}
                    onChange={(e) => setSearch(e.target.value)}/>
 
             <Select onValueChange={(value) => setThreshold(value)} defaultValue={"128"}>
@@ -57,16 +57,16 @@ export default function Page() {
             <p className={"text-3xl"}>Found {results.reduce((acc, result) => acc + result.marked_sentences.length, 0)} occurrences
                 in {results.length} files</p>
 
-            <Accordion type={"multiple"} collapsible className={"w-full px-16"}>
-                {results.map((result, index) => (<AccordionItem key={`item_${index}`} value={result.filename}>
+            <Accordion type={"multiple"} className={"w-full px-16"}>
+                {results.map((result, index) => <AccordionItem key={`item_${index}`} value={result.filename}>
                     <AccordionTrigger>{result.filename}</AccordionTrigger>
-                    <AccordionContent>
-                        {result.marked_sentences.map((sentence, index) => (<>
+                    <AccordionContent key={`content_${index}`}>
+                        {result.marked_sentences.map((sentence, index) => (<div key={index}>
                             <Separator orientation={"horizontal"} className={"my-2"}/>
-                            <div key={index} dangerouslySetInnerHTML={{__html: sentence}} className={"prose max-w-full"}/>
-                        </>))}
+                            <div dangerouslySetInnerHTML={{__html: sentence}} className={"prose max-w-full"}/>
+                        </div>))}
                     </AccordionContent>
-                </AccordionItem>))}
+                </AccordionItem>)}
             </Accordion>
         </>}
     </div>)
