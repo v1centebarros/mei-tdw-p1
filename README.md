@@ -5,6 +5,8 @@ In the digital age, individuals and organizations are often overwhelmed by vast 
 
 Odin addresses this challenge by providing an innovative file repository platform that extracts, analyses, and indexes text and metadata from uploaded documents. The system enables keyword-based searches, highlights relevant document sections, and offers AI-powered insights into single or multiple documents through an interactive chat interface. By streamlining document management and analysis, Odin acts as a personal knowledge hub, empowering users to extract actionable insights from their own data.
 
+[Marketing Video](https://uapt33090-my.sharepoint.com/personal/vmabarros_ua_pt/_layouts/15/stream.aspx?id=%2Fpersonal%2Fvmabarros%5Fua%5Fpt%2FDocuments%2Fmei%2Dtdw%2Dp1%2Emp4&nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&ga=1&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2E758fd81d%2De78a%2D400f%2D8b14%2D791961c1b925)
+
 ---
 
 ## Authors
@@ -46,6 +48,7 @@ Odin addresses this challenge by providing an innovative file repository platfor
    
    - [x] Secure file uploads and storage.
    - [x] User-specific repositories and permissions.
+
 ---
 
 ## Target Audience
