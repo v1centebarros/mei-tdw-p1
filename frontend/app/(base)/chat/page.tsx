@@ -12,10 +12,8 @@ export default function Page() {
     const {data: session} = useSession()
     const [chat, setChat] = useState<string>("")
     const [chatHistory, setChatHistory] = useState<string[]>([])
+    const [currentResponse, setCurrentResponse] = useState<string>("")
 
-    useEffect(() => {
-        console.log("Chat history updated", chatHistory)
-    }, [chatHistory])
 
 
     const requestChat = useCallback(async (chat) => {
@@ -46,6 +44,7 @@ export default function Page() {
             } else {
                 // Use functional update to properly accumulate responses
                 response = event.data;
+                setCurrentResponse(response);
             }
         };
 
@@ -70,6 +69,13 @@ export default function Page() {
                             <p className={"text-justify text-base"}>{chat}</p>
                         </div>
                     ))}
+
+                    {currentResponse.length > 0  && (
+                        <div className={`w-7/12 rounded-2xl p-4 flex flex-col gap-y-1 justify-end bg-primary text-white`}>
+                            <p className={`font-bold text-xl`}>Odin</p>
+                            <p className={"text-justify text-base"}>{chat}</p>
+                        </div>
+                    )}
                 </div>
 
                 <div className={"flex flex-row gap-x-2"}>

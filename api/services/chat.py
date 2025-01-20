@@ -42,7 +42,7 @@ class RAGPipeline:
 
         # Initialize Llama model for text generation
         self.llm = LlamaCPP(
-            model_url=llm_model_path,
+            model_path=llm_model_path,
             model_kwargs={
                 "n_gpu_layers": 0,  # Set > 0 to use GPU
                 "n_batch": 512,
