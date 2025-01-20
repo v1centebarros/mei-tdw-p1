@@ -24,6 +24,8 @@ import { formatRelative } from "date-fns";
 import remarkRehype from "remark-rehype";
 import remarkGfm from "remark-gfm";
 import {useFileDetailsStore} from "@/stores/file-store";
+import {Spinner} from "@/components/spinner";
+import React from "react";
 
 const fontSizes = [
     { label: "Small", value: "prose-base" },
@@ -56,7 +58,7 @@ export function FileDetails() {
     };
 
     if (!hydrated) {
-        return <p>Loading...</p>; // Show loading indicator
+        return <div className={"w-full mx-auto"}><Spinner size="large" /></div>
     }
 
     if (isSuccess)

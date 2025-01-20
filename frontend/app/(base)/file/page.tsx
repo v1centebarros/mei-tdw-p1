@@ -6,6 +6,7 @@ import {type SearchParams} from 'nuqs/server'
 import {fileParamsCache} from "@/lib/searchParams";
 import {auth} from "@/lib/auth";
 import {fileOptions} from "@/hooks/use-files";
+import {Spinner} from "@/components/spinner";
 
 type PageProps = {
     searchParams: Promise<SearchParams>
@@ -22,7 +23,7 @@ export default async function Page({searchParams}: PageProps) {
 
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>
-            <Suspense fallback={<p>Loading...</p>}>
+            <Suspense fallback={<div className={"w-full mx-auto"}><Spinner size="large" /></div>}>
                 <FileDetails/>
             </Suspense>
         </HydrationBoundary>

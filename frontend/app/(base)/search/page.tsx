@@ -52,7 +52,7 @@ export default function Page() {
         </div>
 
         {isError && <p>Error</p>}
-        {isLoading && <p>Loading...</p>}
+        {isLoading && <div className={"w-full mx-auto"}><Spinner size="large" /></div>}
         {isSuccess && <>
             <p className={"text-3xl"}>Found {results.reduce((acc, result) => acc + result.marked_sentences.length, 0)} occurrences
                 in {results.length} files</p>

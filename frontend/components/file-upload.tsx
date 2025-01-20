@@ -18,6 +18,7 @@ import {useMutation} from "@tanstack/react-query";
 import {Button} from "@/components/ui/button";
 import {useToast} from "@/hooks/use-toast";
 import {getQueryClient} from "@/lib/getQueryClient";
+import {Spinner} from "@/components/spinner";
 
 export function FileUpload() {
     const [files, setFiles] = useState<File[]>([]);
@@ -85,7 +86,7 @@ export function FileUpload() {
                 <div className="flex flex-col gap-y-2 pt-2">
                     {files.map((file) => (<FileUploadCard file={file} key={file.name} onDelete={deleteFile}/>))}
                 </div>
-                {filesUploadMutation.isPending && <div>Uploading...</div>}
+                {filesUploadMutation.isPending && <Spinner size="large" />}
                 <DrawerFooter>
                     <DrawerClose asChild>
                         <Button onClick={onSubmit}>Submit</Button>

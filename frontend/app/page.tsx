@@ -4,6 +4,7 @@ import { CheckCircle, FileText, Search, Brain, Shield, Users } from 'lucide-reac
 import Image from "next/image"
 import Link from "next/link"
 import { signIn } from "@/lib/auth"
+import * as React from "react";
 
 export default async function Page() {
     return (
@@ -11,13 +12,7 @@ export default async function Page() {
             {/* Hero Section */}
             <header className="flex flex-col items-center justify-center px-4 py-16 text-center lg:py-24">
                 <div className="relative mb-8 size-24 lg:size-32">
-                    <Image
-                        src="/logo.svg"
-                        alt="Odin Logo"
-                        width={1024}
-                        height={1024}
-                        className="dark:invert"
-                    />
+                    <Image src={"/logo.png"} alt={"Odin Library"} width={1024} height={1024}/>
                 </div>
                 <h1 className="mb-4 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">
                     Welcome to Odin
@@ -178,7 +173,7 @@ export default async function Page() {
                     className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
                     <div className="flex items-center gap-2">
                         <Image
-                            src="/logo.svg"
+                            src="/logo.png"
                             alt="Odin Logo"
                             width={24}
                             height={24}
