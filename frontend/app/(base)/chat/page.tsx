@@ -64,9 +64,9 @@ export default function Page() {
     }, [session]);
 
     return (<>
-            <div className={"flex flex-col gap-y-4 border border-gray-300 p-4 rounded-md h-full"}>
+            <div className={"flex flex-col gap-y-4 border border-gray-300 p-4 rounded-md min-h-full max-h-fit"}>
                 <div className={"flex flex-1 flex-col gap-y-2 flex-grow overflow-y-auto p-4 space-y-4"}>
-                    {chatHistory.map((chat, index) => (
+                {chatHistory.map((chat, index) => (
                         <div key={index} className={`w-7/12 rounded-2xl p-4 flex flex-col gap-y-1 ${index % 2 === 0 ? 'self-end bg-primary text-white' : 'border border-gray-300'}`}>
                             <p className={`${index % 2 === 0 ? "text-white": "text-base"} font-bold text-xl`}>{index % 2 === 0 ? 'You' : 'Odin'}</p>
                             <p className={"text-justify text-base"}>{chat}</p>
@@ -86,8 +86,11 @@ export default function Page() {
                            onChange={(e) => setChat(e.target.value)}
                            onKeyDown={async (e) => { if (e.key === 'Enter') await requestChat(chat); }}
                            value={chat}
+                           disabled={currentResponse.length > 0}
                     />
-                    <Button onClick={() => requestChat(chat)}><Send /></Button>
+                    <Button onClick={() => requestChat(chat)}
+                            disabled={currentResponse.length > 0}
+                    ><Send /></Button>
                 </div>
             </div>
         </>
