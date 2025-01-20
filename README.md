@@ -33,25 +33,19 @@ Odin addresses this challenge by providing an innovative file repository platfor
 
 4. **AI-Powered Chat Interface**
    
-   - [ ] Chat-like interaction for querying individual documents or document collections.
-   - [ ] Provide insights, summaries, and answers to user queries using natural language understanding.
+   - [x] Chat-like interaction for querying individual documents or document collections.
+   - [x] Provide insights, summaries, and answers to user queries using natural language understanding.
 
 5. **User Interface and Experience**
    
-   - [ ] Simple and intuitive interface for non-technical users.
-   - [ ] Highlighted results for faster content understanding.
-   - [ ] File repository dashboard with filters, tags, and keyword summaries.
+   - [x] Simple and intuitive interface for non-technical users.
+   - [x] Highlighted results for faster content understanding.
+   - [x] File repository dashboard with filters, tags, and keyword summaries.
 
 6. **Data Management and Security**
    
    - [x] Secure file uploads and storage.
    - [x] User-specific repositories and permissions.
-
-7. **Export and Integration**
-   
-   - [ ] Allow export of analyzed data, summaries, or search results.
-   - [ ] Integration with third-party tools and APIs (e.g., cloud storage platforms).
-
 ---
 
 ## Target Audience
