@@ -8,6 +8,7 @@ from db.database import get_db
 from schemas.auth import User
 from schemas.search import SearchResult
 from services.vectorSearch import VectorSearchService
+from crud import file as file_crud
 
 vector_search_service = VectorSearchService()
 router = APIRouter(tags=['Search'])
@@ -112,13 +113,20 @@ async def search_documents_full_content(
         return []
 
 
-@router.get("/contextualsearch/", response_model=List[SearchResult])
+@router.get("/contextualsearch/")
 async def search_documents_contextual_content(
         query: str,
+        filters: Optional[str] = "",
         user: User = Security(get_current_user, scopes=["file:read"]),
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        context_range: Optional[int] = 400
 ):
     """
     Search through document content and return contextual snippets with matches highlighted.
     """
-    return vector_search_service.search_by_vector(db, query)
+    files = vector_search_service.search_by_vector(db, query, filters, context_range)
+    results = []
+    for file in range(len(files)):
+        if file_crud.get_file_metadata(db, files[file]['file_id']).user_id == user.sub:
+            results.append(files[file])
+    return results

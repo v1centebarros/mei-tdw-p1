@@ -34,33 +34,84 @@ class VectorSearchService:
     def get_query_embedding(self, query: str):
         return self.model.encode(query).tolist()
 
-    def search_by_vector(self, db: Session, query: str):
-        query_vec = self.get_query_embedding(query)
-        results = search_by_vector(db, query_vec)
+    # def search_by_vector(self, db: Session, query: str):
+    #     query_vec = self.get_query_embedding(query)
+    #     results = search_by_vector(db, query_vec)
+    #
+    #     final_results = list()
+    #     files = [res[1] for res in results]
+    #     unique_files = set(files)
+    #     for file in unique_files:
+    #         content = file.content
+    #         rank = None
+    #         count = 0
+    #         for i, sres in enumerate(sorted(results, key=lambda x: x[0].start_position)):
+    #             if sres[1].id == file.id:
+    #                 res = sres[0]
+    #                 off = count * len("<mark></mark>")
+    #                 content = content[:off + res.start_position] + "<mark>" + content[off + res.start_position:off + res.end_position] + "</mark>" + content[off + res.end_position:]
+    #                 if rank is None:
+    #                     rank = sres[2]
+    #                 else:
+    #                     rank += sres[2]
+    #                 count += 1
+    #
+    #         final_results.append({
+    #             "file_id": file.id,
+    #             "filename": file.filename,
+    #             "content_type": file.content_type,
+    #             "content_preview": content,
+    #             "categories": file.categories,
+    #             "rank": 1 - rank / count
+    #         })
+    #
+    #     return sorted(final_results, key=lambda x: x["rank"], reverse=True)
 
-        final_results = list()
+    def search_by_vector(self, db: Session, query: str, filters: str, context_range: int = 400):
+        query_vec = self.get_query_embedding(query)
+        results = search_by_vector(db, query_vec, filters)
+
+        final_results = []
         files = [res[1] for res in results]
         unique_files = set(files)
+
         for file in unique_files:
             content = file.content
             rank = None
             count = 0
+            marked_sentences = []  # List to store sentences with marked phrases
+
+            # Sort results by start_position for consistent processing
             for i, sres in enumerate(sorted(results, key=lambda x: x[0].start_position)):
                 if sres[1].id == file.id:
                     res = sres[0]
-                    off = count * len("<mark></mark>")
-                    content = content[:off + res.start_position] + "<mark>" + content[off + res.start_position:off + res.end_position] + "</mark>" + content[off + res.end_position:]
+                    start_pos = res.start_position
+                    end_pos = res.end_position
+
+                    # Extract context around the marked phrase
+                    context_start = max(0, content.rfind(' ', 0, start_pos - context_range) + 1 if start_pos > context_range else 0)
+                    context_end = min(len(content),
+                                      content.find(' ', end_pos + context_range) if content.find(' ', end_pos + context_range) != -1 else len(
+                                          content))
+
+                    # Mark the phrase and append the surrounding context
+                    marked_phrase = (content[context_start:start_pos] + "<mark>" +
+                                     content[start_pos:end_pos] + "</mark>" +
+                                     content[end_pos:context_end])
+                    marked_sentences.append(marked_phrase)
+
                     if rank is None:
                         rank = sres[2]
                     else:
                         rank += sres[2]
                     count += 1
 
+            # Prepare the final result for this file
             final_results.append({
                 "file_id": file.id,
                 "filename": file.filename,
                 "content_type": file.content_type,
-                "content_preview": content,
+                "marked_sentences": marked_sentences,  # List of marked sentences
                 "categories": file.categories,
                 "rank": 1 - rank / count
             })
