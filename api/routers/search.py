@@ -8,6 +8,7 @@ from db.database import get_db
 from schemas.auth import User
 from schemas.search import SearchResult
 from services.vectorSearch import VectorSearchService
+from crud import file as file_crud
 
 vector_search_service = VectorSearchService()
 router = APIRouter(tags=['Search'])
@@ -123,11 +124,9 @@ async def search_documents_contextual_content(
     """
     Search through document content and return contextual snippets with matches highlighted.
     """
-
-    """
-    cão AND NOT cat
-    cão
-    cachorro 
-    """
-
-    return vector_search_service.search_by_vector(db, query, filters, context_range)
+    files = vector_search_service.search_by_vector(db, query, filters, context_range)
+    results = []
+    for file in range(len(files)):
+        if file_crud.get_file_metadata(db, files[file]['file_id']).user_id == user.sub:
+            results.append(files[file])
+    return results
