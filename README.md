@@ -5,6 +5,8 @@ In the digital age, individuals and organizations are often overwhelmed by vast 
 
 Odin addresses this challenge by providing an innovative file repository platform that extracts, analyses, and indexes text and metadata from uploaded documents. The system enables keyword-based searches, highlights relevant document sections, and offers AI-powered insights into single or multiple documents through an interactive chat interface. By streamlining document management and analysis, Odin acts as a personal knowledge hub, empowering users to extract actionable insights from their own data.
 
+[Marketing Video](https://uapt33090-my.sharepoint.com/personal/vmabarros_ua_pt/_layouts/15/stream.aspx?id=%2Fpersonal%2Fvmabarros%5Fua%5Fpt%2FDocuments%2Fmei%2Dtdw%2Dp1%2Emp4&nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&ga=1&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2E758fd81d%2De78a%2D400f%2D8b14%2D791961c1b925)
+
 ---
 
 ## Authors
@@ -33,24 +35,19 @@ Odin addresses this challenge by providing an innovative file repository platfor
 
 4. **AI-Powered Chat Interface**
    
-   - [ ] Chat-like interaction for querying individual documents or document collections.
-   - [ ] Provide insights, summaries, and answers to user queries using natural language understanding.
+   - [x] Chat-like interaction for querying individual documents or document collections.
+   - [x] Provide insights, summaries, and answers to user queries using natural language understanding.
 
 5. **User Interface and Experience**
    
-   - [ ] Simple and intuitive interface for non-technical users.
-   - [ ] Highlighted results for faster content understanding.
-   - [ ] File repository dashboard with filters, tags, and keyword summaries.
+   - [x] Simple and intuitive interface for non-technical users.
+   - [x] Highlighted results for faster content understanding.
+   - [x] File repository dashboard with filters, tags, and keyword summaries.
 
 6. **Data Management and Security**
    
    - [x] Secure file uploads and storage.
    - [x] User-specific repositories and permissions.
-
-7. **Export and Integration**
-   
-   - [ ] Allow export of analyzed data, summaries, or search results.
-   - [ ] Integration with third-party tools and APIs (e.g., cloud storage platforms).
 
 ---
 
