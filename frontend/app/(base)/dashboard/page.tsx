@@ -13,23 +13,10 @@ export default async function Home() {
     const queryClient = getQueryClient();
     const session = await auth();
 
-    void queryClient.prefetchQuery(filesOptions(session?.user.accessToken));
+    void queryClient.prefetchQuery(filesOptions(session?.user.accessToken, session?.user.email));
 
     return (<div className={"container mx-auto"}>
             <p className={"text-5xl text-center"}>My Files</p>
-            <div className={"flex flex-row items-center gap-x-3 py-8"}>
-                <Input type="email" placeholder="Search" className={"max-w-xs"}/>
-                <Select>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Category"/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="light">Light</SelectItem>
-                        <SelectItem value="dark">Dark</SelectItem>
-                        <SelectItem value="system">System</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
             <HydrationBoundary state={dehydrate(queryClient)}>
                 <Suspense fallback={<p>Loading...</p>}>
                     <FileList/>

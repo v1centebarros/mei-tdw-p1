@@ -2,8 +2,8 @@ import { queryOptions} from "@tanstack/react-query";
 
 
 
-const filesOptions = (token:string | undefined) => queryOptions({
-    queryKey: ["files"],
+const filesOptions = (token:string | undefined, email: string | undefined) => queryOptions({
+    queryKey: ["files", email],
     queryFn: async () => {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/files`,
             {

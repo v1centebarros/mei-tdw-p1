@@ -33,7 +33,7 @@ const fileSizeConverter = (size: number) => {
 export function FileList() {
     const {data: session} = useSession()
 
-    const {data} = useSuspenseQuery(filesOptions(session?.user.accessToken));
+    const {data} = useSuspenseQuery(filesOptions(session?.user.accessToken, session?.user.email));
     const queryClient = getQueryClient();
 
     const deleteFile = async (fileId: string) => {
