@@ -298,7 +298,7 @@ async def delete_file(
     minio_service.delete_file(file_id)
 
     # Delete metadata from PostgreSQL
-    if file_crud.delete_file_metadata(db, file_id):
+    if vector_search_crud.delete_file(db, file_id):
         return {
             "message": f"Successfully deleted {metadata.get('x-amz-meta-filename', file_id)} and its metadata"
         }

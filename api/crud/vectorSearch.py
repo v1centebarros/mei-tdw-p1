@@ -78,3 +78,11 @@ def search_by_vector(db: Session, query_vector, query_text: str):
     print(query)
     results = db.execute(query, params).all()
     return results
+
+
+def delete_file(db: Session, file_id: str):
+    """Delete file metadata and embeddings"""
+    db.query(FileEmbedding).filter(FileEmbedding.file_id == file_id).delete()
+    db.query(FileMetadata).filter(FileMetadata.id == file_id).delete()
+    db.commit()
+    return True
