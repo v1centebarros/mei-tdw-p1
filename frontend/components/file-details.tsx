@@ -55,7 +55,7 @@ export function FileDetails() {
         toast({title: "Copied to clipboard", description: "File content copied to clipboard"});
     }
 
-    if (isSuccess) return <div className={"max-w-full mx-auto"}>
+    if (isSuccess) return <div className={"w-full mx-auto"}>
         <p>
             <span className={"text-4xl font-bold"}>{fileData?.filename}</span>
             <span className={"text-lg font-light"}>{fileData?.content_type}</span>
@@ -87,7 +87,7 @@ export function FileDetails() {
             </DropdownMenu>
         </div>
         <Markdown
-            className={`transition-all duration-1000 ease-in-out mx-auto ${expanded ? "" : "px-48"} max-w-full prose ${fontSize} `}
+            className={`transition-all duration-1000 ease-in-out mx-auto ${expanded ? "" : "px-48"} min-w-full prose ${fontSize} `}
             rehypePlugins={[remarkRehype]}
             remarkPlugins={[remarkGfm]}
             remarkRehypeOptions={{ passThrough: ['link'] }}
