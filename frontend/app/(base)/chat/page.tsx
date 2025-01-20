@@ -37,6 +37,7 @@ export default function Page() {
             if (event.data === "") {
                 if (startedConnection) {
                     setChatHistory(prev => [...prev, response]);
+                    setCurrentResponse("");
                     eventSource.close();
                 } else {
                     startedConnection = true;
@@ -50,12 +51,14 @@ export default function Page() {
 
         eventSource.onerror = (error) => {
             setChatHistory(prev => [...prev, response]);
+            setCurrentResponse("");
             eventSource.close();
         };
 
         // Cleanup function
         return () => {
             setChatHistory(prev => [...prev, response]);
+            setCurrentResponse("");
             eventSource.close();
         };
     }, [session]);
@@ -64,16 +67,16 @@ export default function Page() {
             <div className={"flex flex-col gap-y-4 border border-gray-300 p-4 rounded-md h-full"}>
                 <div className={"flex flex-1 flex-col gap-y-2 flex-grow overflow-y-auto p-4 space-y-4"}>
                     {chatHistory.map((chat, index) => (
-                        <div key={index} className={`w-7/12 rounded-2xl p-4 flex flex-col gap-y-1 ${index % 2 === 0 ? 'justify-end bg-primary text-white' : 'justify-start border border-gray-300'}`}>
+                        <div key={index} className={`w-7/12 rounded-2xl p-4 flex flex-col gap-y-1 ${index % 2 === 0 ? 'self-end bg-primary text-white' : 'border border-gray-300'}`}>
                             <p className={`${index % 2 === 0 ? "text-white": "text-base"} font-bold text-xl`}>{index % 2 === 0 ? 'You' : 'Odin'}</p>
                             <p className={"text-justify text-base"}>{chat}</p>
                         </div>
                     ))}
 
                     {currentResponse.length > 0  && (
-                        <div className={`w-7/12 rounded-2xl p-4 flex flex-col gap-y-1 justify-end bg-primary text-white`}>
+                        <div className={`w-7/12 rounded-2xl p-4 flex flex-col gap-y-1 border border-gray-300`}>
                             <p className={`font-bold text-xl`}>Odin</p>
-                            <p className={"text-justify text-base"}>{chat}</p>
+                            <p className={"text-justify text-base"}>{currentResponse}</p>
                         </div>
                     )}
                 </div>
