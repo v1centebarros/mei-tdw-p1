@@ -43,16 +43,16 @@ services:
         /opt/bitnami/keycloak/bin/kcadm.sh create roles -r "TDW" -s name="file:read" --config /opt/bitnami/keycloak/keycloakConfig.json
         /opt/bitnami/keycloak/bin/kcadm.sh create roles -r "TDW" -s name="file:write" --config /opt/bitnami/keycloak/keycloakConfig.json
 
-      KC_HOSTNAME: localhost
-      KC_HOSTNAME_PORT: 8080
-      KC_HOSTNAME_STRICT: false
-      KC_HOSTNAME_STRICT_HTTPS: false
+        KC_HOSTNAME: localhost
+        KC_HOSTNAME_PORT: 8080
+        KC_HOSTNAME_STRICT: false
+        KC_HOSTNAME_STRICT_HTTPS: false
 
-      KC_LOG_LEVEL: info
-      KC_METRICS_ENABLED: true
-      KC_HEALTH_ENABLED: true
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+        KC_LOG_LEVEL: info
+        KC_METRICS_ENABLED: true
+        KC_HEALTH_ENABLED: true
+        KEYCLOAK_ADMIN: admin
+        KEYCLOAK_ADMIN_PASSWORD: admin
     command: start-dev
     depends_on:
       - keycloakdb
