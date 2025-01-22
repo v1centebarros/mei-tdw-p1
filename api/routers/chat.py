@@ -8,7 +8,7 @@ from services.chat import RAGPipeline
 from sse_starlette.sse import EventSourceResponse
 
 router = APIRouter(tags=['Chat'])
-rag_pipeline = RAGPipeline("services/Hermes-3-Llama-3.2-3B.Q4_K_M.gguf")
+rag_pipeline = RAGPipeline("services/model.gguf")
 
 @router.get("/chat/", status_code=200)
 async def chat(
