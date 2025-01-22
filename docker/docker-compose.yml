@@ -64,11 +64,54 @@ services:
       API_DB_NAME: api
       API_DB_USER: api
       API_DB_PASSWORD: password
-      
-  tika:
-    image: apache/tika
+    
+  api:
+    build:
+      context: ../api
+      dockerfile: Dockerfile
+    depends_on:
+      - keycloak_web
+      - keycloakdb
+      - minio
+    environment:
+      # Keycloak settings
+      - KEYCLOAK_URL=http://keycloak_web:8080
+      - KEYCLOAK_REALM=TDW
+      - KEYCLOAK_CLIENT_ID=tdw-client
+      - KEYCLOAK_CLIENT_SECRET=WnM69tiQwcscM9Ix0f5TXppHOuS917lm
+      - KEYCLOAK_ALGORITHM=RS256
+
+      # MinIO settings
+      - MINIO_HOST=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_SECURE=false
+      - MINIO_BUCKET_NAME=fastapi-bucket
+
+      # Database settings
+      - DB_USER=api
+      - DB_PASSWORD=password
+      - DB_HOST=keycloakdb
+      - DB_PORT=5432
+      - DB_NAME=api
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - api
+      - keycloak_web
+    environment:
+      - AUTH_SECRET="i9SqyC7xA1YFNESd3RVITVUPhY/7yKefr+xBFKiP75M="
+      - AUTH_TRUST_HOST=false
+      - AUTH_URL=http://localhost:3000/api/auth
+
+      - AUTH_KEYCLOAK_ID=tdw-client
+      - AUTH_KEYCLOAK_SECRET=WnM69tiQwcscM9Ix0f5TXppHOuS917lm
+      - AUTH_KEYCLOAK_ISSUER=http://localhost:8080/realms/TDW
     ports:
-      - "9998:9998"
+      - 3000:3000
 
 volumes:
   keycloak_data:

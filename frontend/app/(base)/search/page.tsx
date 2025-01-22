@@ -15,6 +15,7 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select";
+import { Spinner } from "@/components/spinner";
 
 export default function Page() {
 
@@ -35,7 +36,7 @@ export default function Page() {
             <Input type="text" placeholder="Search" className={"max-w-md"}
                    onChange={(e) => setSearch(e.target.value)}/>
 
-            <Select onValueChange={(value) => setThreshold(value)} defaultValue={"128"}>
+            <Select onValueChange={(value) => setThreshold(parseInt(value))} defaultValue={"128"}>
                 <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select a threshold"/>
                 </SelectTrigger>
