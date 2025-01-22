@@ -33,7 +33,7 @@ export function FileUpload() {
                 formData.append("files", file);
             });
 
-            const response = await fetch("${process.env.NEXT_PUBLIC_API_URL}/upload/bulk", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/bulk`, {
                 method: "POST", body: formData,
                 headers: {
                     Authorization: `Bearer ${session?.user?.accessToken}`,
