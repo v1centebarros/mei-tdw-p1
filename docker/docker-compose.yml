@@ -9,7 +9,7 @@ services:
       - minio_data:/data
 
   keycloak_web:
-    image: bitnami/keycloak
+    image: quay.io/keycloak/keycloak:latest
     container_name: keycloak_web
     environment:
       - KEYCLOAK_DATABASE_HOST=keycloakdb
@@ -43,8 +43,17 @@ services:
         /opt/bitnami/keycloak/bin/kcadm.sh create roles -r "TDW" -s name="file:read" --config /opt/bitnami/keycloak/keycloakConfig.json
         /opt/bitnami/keycloak/bin/kcadm.sh create roles -r "TDW" -s name="file:write" --config /opt/bitnami/keycloak/keycloakConfig.json
 
-        
-        wait $$KEYCLOAK_PID
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+
+      KC_LOG_LEVEL: info
+      KC_METRICS_ENABLED: true
+      KC_HEALTH_ENABLED: true
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    command: start-dev
     depends_on:
       - keycloakdb
     ports:
@@ -123,6 +132,5 @@ services:
   #   network_mode: host
 
 volumes:
-  keycloak_data:
   postgres_data:
   minio_data:
